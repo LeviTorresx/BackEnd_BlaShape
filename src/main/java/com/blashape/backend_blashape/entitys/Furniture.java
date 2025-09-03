@@ -24,6 +24,8 @@ public class Furniture {
     private String documentUrl;
     private String imagenInitUrl;
     private String imageEndUrl;
+
+    @Enumerated(EnumType.STRING)
     private FurnitureStatus status;
 
     @ManyToOne
