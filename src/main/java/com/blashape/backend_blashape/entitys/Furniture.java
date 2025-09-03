@@ -24,6 +24,7 @@ public class Furniture {
     private String documentUrl;
     private String imagenInitUrl;
     private String imageEndUrl;
+    private FurnitureStatus status;
 
     @ManyToOne
     @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
