@@ -5,3 +5,4 @@ public enum FurnitureStatus {
     COMPLETED,
     CANCELED
 }
+
