@@ -16,7 +16,8 @@ public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long materialId;
-    private String color;
+    private String colorName;
+    private String colorHex;
     private Double thickness;
     private String name;
 }

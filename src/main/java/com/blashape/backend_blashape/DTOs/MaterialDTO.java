@@ -10,7 +10,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MaterialDTO {
     private Long materialId;
-    private String color;
+    private String colorName;
+    private String colorHex;
     private Double thickness;
     private String name;
 }
