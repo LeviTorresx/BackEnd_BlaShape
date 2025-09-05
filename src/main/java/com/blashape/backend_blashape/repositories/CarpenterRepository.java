@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CarpenterRepository extends JpaRepository<Carpenter, Long> {
+    boolean existsByEmail(String email);
+    boolean existsByIdNumber(String idNumber);
 }
