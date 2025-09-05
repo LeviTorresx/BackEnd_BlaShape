@@ -6,19 +6,16 @@ import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.WorkshopRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
+@RequiredArgsConstructor
 public class CarpenterService {
-
-    @Autowired
     private CarpenterRepository carpenterRepository;
-
-    @Autowired
     private WorkshopRepository workshopRepository;
-
-    @Autowired
     private ObjectMapper  objectMapper;
 
     public CarpenterDTO createCarpenter(CarpenterDTO dto) {
@@ -76,6 +73,18 @@ public class CarpenterService {
         return dto;
     }
 
+    public List<CarpenterDTO> getAllCarpenters() {
+        List<Carpenter> carpenters = carpenterRepository.findAll();
+
+        return carpenters.stream()
+                .map(carpenter -> {
+                    CarpenterDTO dto = objectMapper.convertValue(carpenter, CarpenterDTO.class);
+                    dto.setWorkshopId(carpenter.getWorkshop() != null ? carpenter.getWorkshop().getWorkshopId() : null);
+                    return dto;
+                })
+                .toList();
+    }
+
     public CarpenterDTO updateCarpenter(Long id, CarpenterDTO dto) {
         Carpenter existing = carpenterRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
@@ -113,28 +122,4 @@ public class CarpenterService {
         carpenterRepository.deleteById(id);
     }
 
-    public CarpenterDTO assignWorkshop(Long carpenterId, Long workshopId) {
-        Carpenter carpenter = carpenterRepository.findById(carpenterId)
-                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + carpenterId));
-
-        Workshop workshop = workshopRepository.findById(workshopId)
-                .orElseThrow(() -> new EntityNotFoundException("Taller no encontrado con ID: " + workshopId));
-
-        if (carpenter.getWorkshop() != null && !carpenter.getWorkshop().getWorkshopId().equals(workshopId)) {
-            throw new IllegalStateException("El carpintero ya tiene un taller asignado");
-        }
-
-        if (workshop.getCarpenter() != null && !workshop.getCarpenter().getCarpenterId().equals(carpenterId)) {
-            throw new IllegalStateException("Este taller ya está asignado a otro carpintero");
-        }
-
-        carpenter.setWorkshop(workshop);
-        workshop.setCarpenter(carpenter);
-
-        Carpenter updated = carpenterRepository.save(carpenter);
-
-        CarpenterDTO dto = objectMapper.convertValue(updated, CarpenterDTO.class);
-        dto.setWorkshopId(workshopId);
-        return dto;
-    }
 }
