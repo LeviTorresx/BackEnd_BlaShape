@@ -15,10 +15,10 @@ public class FurnitureDTO {
     private Long furnitureId;
     private String name;
     private String documentUrl;
-    private String imagenInitUrl;
+    private String imageInitUrl;
     private String imageEndUrl;
     private FurnitureStatus status;
     private Long carpenterId;
     private Long customerId;
-    private List<Long> piecesIds;
+    private List<PieceDTO> pieces;
 }

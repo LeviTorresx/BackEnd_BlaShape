@@ -22,7 +22,7 @@ public class Furniture {
 
     private String name;
     private String documentUrl;
-    private String imagenInitUrl;
+    private String imageInitUrl;
     private String imageEndUrl;
 
     @Enumerated(EnumType.STRING)
