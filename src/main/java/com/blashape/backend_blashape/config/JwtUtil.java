@@ -16,15 +16,13 @@ public class JwtUtil {
     private String SECRET_KEY;
 
     @Value("${JWT_EXPIRATION}")
-    private String EXPIRATION_TIME;
-
-
+    private long EXPIRATION_TIME; // ahora es long, no String
 
     public String generateToken(String email, Long carpenterId) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("carpenterId", carpenterId)
-                .setIssuedAt(new Date())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY.getBytes())
                 .compact();
@@ -34,20 +32,20 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
-
     public Long extractId(String token) {
-        return extractAllClaims(token).get("carpenterID", Long.class);
+        return extractAllClaims(token).get("carpenterId", Long.class);
     }
 
-    public boolean validateToken(String token, String email) {
+    public boolean validateToken(String token) {
         try {
-            return email.equals(extractEmail(token)) && !isTokenExpired(token);
+            return !isTokenExpired(token);
         } catch (JwtException e) {
             return false;
         }
     }
 
-    private Claims extractAllClaims(String token) {
+
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY.getBytes())
                 .build()
