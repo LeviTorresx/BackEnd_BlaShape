@@ -1,5 +1,6 @@
 package com.blashape.backend_blashape.services;
 
+import com.blashape.backend_blashape.DTOs.CarpenterDTO;
 import com.blashape.backend_blashape.DTOs.LoginRequest;
 import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private CarpenterRepository carpenterRepository;
-    private JwtUtil jwtUtil;
-    private PasswordEncoder passwordEncoder;
-    private ObjectMapper objectMapper;
+    private final CarpenterRepository carpenterRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     public LoginResponse login(LoginRequest request) {
         Carpenter carpenter = carpenterRepository.findByEmail(request.getEmail())
@@ -33,6 +34,51 @@ public class AuthService {
         return response;
     }
 
+    public CarpenterDTO register(CarpenterDTO dto) {
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (dto.getLastName() == null || dto.getLastName().isBlank()) {
+            throw new IllegalArgumentException("El apellido es obligatorio");
+        }
+        if (dto.getIdNumber() == null || dto.getIdNumber().isBlank()) {
+            throw new IllegalArgumentException("La cédula es obligatoria");
+        }
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new IllegalArgumentException("El correo electrónico es obligatorio");
+        }
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria");
+        }
+
+        if (!dto.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new IllegalArgumentException("El formato del correo es inválido");
+        }
+
+        if (dto.getPassword().length() < 6) {
+            throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
+        }
+
+        if (carpenterRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("El correo ya está registrado");
+        }
+        if (carpenterRepository.existsByIdNumber(dto.getIdNumber())) {
+            throw new IllegalArgumentException("La cédula ya está registrada");
+        }
+
+        Carpenter carpenter = objectMapper.convertValue(dto, Carpenter.class);
+
+        carpenter.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        carpenter.setWorkshop(null);
+
+        Carpenter saved = carpenterRepository.save(carpenter);
+
+        CarpenterDTO response = objectMapper.convertValue(saved, CarpenterDTO.class);
+        response.setWorkshopId(null);
+        response.setPassword(null);
+        return response;
+    }
 
 
 }
