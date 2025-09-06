@@ -80,5 +80,21 @@ public class AuthService {
         return response;
     }
 
+    public CarpenterDTO getCarpenterFromToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new RuntimeException("Token missing");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+
+        Carpenter user = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        CarpenterDTO dto = objectMapper.convertValue(user, CarpenterDTO.class);
+        dto.setPassword(null);
+        return dto;
+    }
+
+
 
 }
