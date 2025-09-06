@@ -7,6 +7,7 @@ import com.blashape.backend_blashape.repositories.WorkshopRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class CarpenterService {
     private CarpenterRepository carpenterRepository;
     private WorkshopRepository workshopRepository;
     private ObjectMapper  objectMapper;
+    private PasswordEncoder passwordEncoder;
 
     public CarpenterDTO createCarpenter(CarpenterDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -35,16 +37,13 @@ public class CarpenterService {
             throw new IllegalArgumentException("La contraseña es obligatoria");
         }
 
-
         if (!dto.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
             throw new IllegalArgumentException("El formato del correo es inválido");
         }
 
-
         if (dto.getPassword().length() < 6) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
-
 
         if (carpenterRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("El correo ya está registrado");
@@ -53,14 +52,18 @@ public class CarpenterService {
             throw new IllegalArgumentException("La cédula ya está registrada");
         }
 
-
         Carpenter carpenter = objectMapper.convertValue(dto, Carpenter.class);
+
+        // 🔐 Encriptar contraseña
+        carpenter.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         carpenter.setWorkshop(null);
 
         Carpenter saved = carpenterRepository.save(carpenter);
 
         CarpenterDTO response = objectMapper.convertValue(saved, CarpenterDTO.class);
         response.setWorkshopId(null);
+        response.setPassword(null);
         return response;
     }
 
