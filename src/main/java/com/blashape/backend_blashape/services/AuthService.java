@@ -7,6 +7,8 @@ import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -95,6 +97,24 @@ public class AuthService {
         return dto;
     }
 
+    public void updatePassword(String email, String newPassword) {
+        Carpenter carpenter = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
 
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        carpenter.setPassword(encodedPassword);
+
+        carpenterRepository.save(carpenter);
+    }
+
+    public void logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwt", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // usar true en producción con HTTPS
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // expira inmediatamente
+
+        response.addCookie(cookie);
+    }
 
 }
