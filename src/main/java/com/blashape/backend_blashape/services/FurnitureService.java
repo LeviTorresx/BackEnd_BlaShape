@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,8 +25,13 @@ public class FurnitureService {
     private final CarpenterRepository carpenterRepository;
     private final CustomerRepository customerRepository;
     private final ObjectMapper objectMapper;
+    private final FileStorageService fileStorageService;
 
-    public FurnitureDTO createFurniture(FurnitureDTO dto) {
+    public FurnitureDTO createFurniture(FurnitureDTO dto,
+                                        MultipartFile document,
+                                        MultipartFile imageInit,
+                                        MultipartFile imageEnd) {
+
         if (dto.getName() == null || dto.getName().isBlank()) {
             throw new IllegalArgumentException("El nombre del mueble es obligatorio");
         }
@@ -46,13 +52,24 @@ public class FurnitureService {
         furniture.setCarpenter(carpenter);
         furniture.setCustomer(customer);
 
-        // ⚡ Manejo de piezas nuevas
+        // Guardar archivos
+        if (document != null) {
+            furniture.setDocumentUrl(fileStorageService.saveFile(document, "documents"));
+        }
+        if (imageInit != null) {
+            furniture.setImageInitUrl(fileStorageService.saveFile(imageInit, "images"));
+        }
+        if (imageEnd != null) {
+            furniture.setImageEndUrl(fileStorageService.saveFile(imageEnd, "images"));
+        }
+
+        // Manejo de piezas nuevas
         if (dto.getPieces() != null && !dto.getPieces().isEmpty()) {
             List<Piece> pieces = dto.getPieces().stream()
                     .map(pieceDTO -> {
                         Piece piece = objectMapper.convertValue(pieceDTO, Piece.class);
                         piece.setSheetId(null);
-                        piece.setFurniture(furniture); // asociación al mueble
+                        piece.setFurniture(furniture);
                         return piece;
                     })
                     .toList();
@@ -65,7 +82,6 @@ public class FurnitureService {
         response.setCarpenterId(carpenter.getCarpenterId());
         response.setCustomerId(customer.getCustomerId());
 
-        // ⚡ Convertimos también las piezas creadas
         if (saved.getPieces() != null) {
             List<PieceDTO> pieceDTOs = saved.getPieces().stream()
                     .map(piece -> {
@@ -103,21 +119,36 @@ public class FurnitureService {
                 .toList();
     }
 
-    public FurnitureDTO updateFurniture(Long id, FurnitureDTO dto) {
+    public FurnitureDTO updateFurniture(Long id,
+                                        FurnitureDTO dto,
+                                        MultipartFile document,
+                                        MultipartFile imageInit,
+                                        MultipartFile imageEnd) {
         Furniture furniture = furnitureRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Mueble no encontrado con ID: " + id));
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             furniture.setName(dto.getName());
         }
-        if (dto.getDocumentUrl() != null && !dto.getDocumentUrl().isBlank()) {
-            furniture.setDocumentUrl(dto.getDocumentUrl());
+
+        
+        if (document != null) {
+            if (furniture.getDocumentUrl() != null) {
+                fileStorageService.deleteFile(furniture.getDocumentUrl());
+            }
+            furniture.setDocumentUrl(fileStorageService.saveFile(document, "documents"));
         }
-        if (dto.getImageInitUrl() != null && !dto.getImageInitUrl().isBlank()) {
-            furniture.setImageInitUrl(dto.getImageInitUrl());
+        if (imageInit != null) {
+            if (furniture.getImageInitUrl() != null) {
+                fileStorageService.deleteFile(furniture.getImageInitUrl());
+            }
+            furniture.setImageInitUrl(fileStorageService.saveFile(imageInit, "images"));
         }
-        if (dto.getImageEndUrl() != null && !dto.getImageEndUrl().isBlank()) {
-            furniture.setImageEndUrl(dto.getImageEndUrl());
+        if (imageEnd != null) {
+            if (furniture.getImageEndUrl() != null) {
+                fileStorageService.deleteFile(furniture.getImageEndUrl());
+            }
+            furniture.setImageEndUrl(fileStorageService.saveFile(imageEnd, "images"));
         }
 
         if (dto.getCarpenterId() != null) {
@@ -142,6 +173,10 @@ public class FurnitureService {
     public void deleteFurniture(Long id) {
         Furniture furniture = furnitureRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Mueble no encontrado con ID: " + id));
+
+        if (furniture.getDocumentUrl() != null) fileStorageService.deleteFile(furniture.getDocumentUrl());
+        if (furniture.getImageInitUrl() != null) fileStorageService.deleteFile(furniture.getImageInitUrl());
+        if (furniture.getImageEndUrl() != null) fileStorageService.deleteFile(furniture.getImageEndUrl());
 
         furnitureRepository.delete(furniture);
     }
