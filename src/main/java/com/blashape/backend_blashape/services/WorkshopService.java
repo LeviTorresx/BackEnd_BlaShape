@@ -1,12 +1,10 @@
 package com.blashape.backend_blashape.services;
 
-import com.blashape.backend_blashape.DTOs.CarpenterDTO;
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Workshop;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.WorkshopRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,9 +14,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class WorkshopService {
+
     private final WorkshopRepository workshopRepository;
     private final CarpenterRepository carpenterRepository;
-    private final ObjectMapper objectMapper;
 
     public WorkshopDTO createWorkshop(WorkshopDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -35,13 +33,19 @@ public class WorkshopService {
         }
 
         Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
-                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + dto.getCarpenterId()));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Carpintero no encontrado con ID: " + dto.getCarpenterId()
+                ));
 
         if (carpenter.getWorkshop() != null) {
             throw new IllegalStateException("El carpintero ya tiene un taller asignado");
         }
 
-        Workshop workshop = objectMapper.convertValue(dto, Workshop.class);
+        Workshop workshop = new Workshop();
+        workshop.setName(dto.getName());
+        workshop.setAddress(dto.getAddress());
+        workshop.setPhone(dto.getPhone());
+        workshop.setNit(dto.getNit());
         workshop.setCarpenter(carpenter);
 
         Workshop savedWorkshop = workshopRepository.save(workshop);
@@ -49,32 +53,31 @@ public class WorkshopService {
         carpenter.setWorkshop(savedWorkshop);
         carpenterRepository.save(carpenter);
 
-        WorkshopDTO response = objectMapper.convertValue(savedWorkshop, WorkshopDTO.class);
-        response.setCarpenterId(carpenter.getCarpenterId());
-        return response;
+        return toDto(savedWorkshop);
     }
 
     public WorkshopDTO getWorkshop(Long id) {
         Workshop workshop = workshopRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Taller no encontrado con ID: " + id));
-        WorkshopDTO dto = objectMapper.convertValue(workshop, WorkshopDTO.class);
-        if (workshop.getCarpenter() != null) {
-            dto.setCarpenterId(workshop.getCarpenter().getCarpenterId());
-        }
-        return dto;
+        return toDto(workshop);
     }
 
     public List<WorkshopDTO> getAllWorkshops() {
         return workshopRepository.findAll()
                 .stream()
-                .map(workshop -> {
-                    WorkshopDTO dto = objectMapper.convertValue(workshop, WorkshopDTO.class);
-                    if (workshop.getCarpenter() != null) {
-                        dto.setCarpenterId(workshop.getCarpenter().getCarpenterId());
-                    }
-                    return dto;
-                })
+                .map(this::toDto)
                 .toList();
+    }
+
+    public WorkshopDTO getWorkshopByCarpenterId(Long carpenterId) {
+        Carpenter carpenter = carpenterRepository.findById(carpenterId)
+                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + carpenterId));
+
+        Workshop workshop = carpenter.getWorkshop();
+        if (workshop == null) {
+            throw new EntityNotFoundException("El carpintero con ID " + carpenterId + " no tiene taller asignado");
+        }
+        return toDto(workshop);
     }
 
     public WorkshopDTO updateWorkshop(Long id, WorkshopDTO dto) {
@@ -95,12 +98,7 @@ public class WorkshopService {
         }
 
         Workshop updated = workshopRepository.save(workshop);
-
-        WorkshopDTO response = objectMapper.convertValue(updated, WorkshopDTO.class);
-        if (updated.getCarpenter() != null) {
-            response.setCarpenterId(updated.getCarpenter().getCarpenterId());
-        }
-        return response;
+        return toDto(updated);
     }
 
     public void deleteWorkshop(Long id) {
@@ -116,5 +114,17 @@ public class WorkshopService {
         workshopRepository.delete(workshop);
     }
 
-
+    private WorkshopDTO toDto(Workshop workshop) {
+        WorkshopDTO dto = new WorkshopDTO();
+        dto.setWorkshopId(workshop.getWorkshopId());
+        dto.setName(workshop.getName());
+        dto.setAddress(workshop.getAddress());
+        dto.setPhone(workshop.getPhone());
+        dto.setNit(workshop.getNit());
+        if (workshop.getCarpenter() != null) {
+            dto.setCarpenterId(workshop.getCarpenter().getCarpenterId());
+        }
+        return dto;
+    }
 }
+

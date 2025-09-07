@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.entitys;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,8 +32,8 @@ public class Carpenter {
    private String password;
    private String phone;
 
-   @OneToOne(cascade = CascadeType.ALL)
-   @JoinColumn(name = "workshop_id", referencedColumnName = "workshopId")
+   @OneToOne(mappedBy = "carpenter", cascade = CascadeType.ALL, orphanRemoval = false)
+   @JsonManagedReference
    private Workshop workshop;
 
    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
