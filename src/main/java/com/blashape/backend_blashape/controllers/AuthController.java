@@ -60,7 +60,7 @@ public class AuthController {
 
     @PostMapping("/send-2fa")
     public ResponseEntity<String> send2FA(HttpServletRequest request) {
-        String token = extractTokenFromCookie(request);
+        String token = jwtUtil.extractTokenFromCookie(request);
         String email = jwtUtil.extractEmail(token);
 
         twoFactorAuthService.sendVerificationCode(email);
@@ -72,7 +72,7 @@ public class AuthController {
             HttpServletRequest request,
             @RequestParam String code) {
 
-        String token = extractTokenFromCookie(request);
+        String token = jwtUtil.extractTokenFromCookie(request);
         String email = jwtUtil.extractEmail(token);
 
         if (twoFactorAuthService.verifyCode(email, code)) {
@@ -86,7 +86,7 @@ public class AuthController {
             HttpServletRequest request,
             @RequestParam String newPassword) {
 
-        String token = extractTokenFromCookie(request);
+        String token = jwtUtil.extractTokenFromCookie(request);
         String email = jwtUtil.extractEmail(token);
 
         if (!twoFactorAuthService.isVerified(email)) {
@@ -95,18 +95,6 @@ public class AuthController {
 
         authService.updatePassword(email, newPassword);
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
-    }
-
-    // 🔹 Método auxiliar para extraer JWT desde la cookie
-    private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("jwt".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        throw new RuntimeException("Token no encontrado en las cookies");
     }
 
     @PostMapping("/logout")
