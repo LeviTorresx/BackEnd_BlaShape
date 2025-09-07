@@ -102,9 +102,4 @@ public class AuthController {
         authService.logout(response);
         return ResponseEntity.ok("Sesión cerrada correctamente.");
     }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
-    }
 }
