@@ -1,11 +1,13 @@
 package com.blashape.backend_blashape.entitys;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -21,22 +23,27 @@ public class Furniture {
     private Long furnitureId;
 
     private String name;
-    private String documentUrl;
-    private String imageInitUrl;
-    private String imageEndUrl;
+    private String documentURL;
+    private String imageInitURL;
+    private String imageEndURL;
+    private LocalDate creationDate;
+    private LocalDate endDate;
 
     @Enumerated(EnumType.STRING)
     private FurnitureStatus status;
 
     @ManyToOne
     @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
+    @JsonBackReference(value = "carpenter-furniture")
     private Carpenter carpenter;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", referencedColumnName = "customerId")
+    @JsonBackReference(value = "customer-furniture")
     private Customer customer;
 
-    @OneToMany(mappedBy = "furniture", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "furniture_id")
     private List<Piece> pieces;
 
 }

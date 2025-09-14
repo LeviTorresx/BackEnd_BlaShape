@@ -14,7 +14,6 @@ import lombok.Setter;
 @Table(name ="sheet")
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Sheet {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sheetId;

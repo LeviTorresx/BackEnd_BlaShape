@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface CarpenterRepository extends JpaRepository<Carpenter, Long> {
     boolean existsByEmail(String email);
-    boolean existsByIdNumber(String idNumber);
+    boolean existsByDni(String dni);
     Optional<Carpenter> findByEmail(String email);
 }

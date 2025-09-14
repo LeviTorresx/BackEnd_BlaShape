@@ -1,25 +1,25 @@
-package com.blashape.backend_blashape.DTOs;
+package com.blashape.backend_blashape.entitys;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CarpenterDTO {
-    private Long carpenterId;
+@MappedSuperclass
+public abstract class User {
     private String name;
     private String lastName;
     private String dni;
-    private String rut;
     private String email;
-    private String password;
     private String phone;
-    private String role;
 
-    private Long workshopId;
-    private List<Long> furnitureListIds;
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
 }

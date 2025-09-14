@@ -16,27 +16,20 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name ="carpenter")
-public class Carpenter {
+public class Carpenter extends User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long carpenterId;
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private Long carpenterId;
-   private String name;
-   private String lastName;
-   private String idNumber;
-
-    @Column(nullable = true)
     private String rut;
+    private String password;
 
-   private String email;
-   private String password;
-   private String phone;
+    @OneToOne(mappedBy = "carpenter", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Workshop workshop;
 
-   @OneToOne(mappedBy = "carpenter", cascade = CascadeType.ALL, orphanRemoval = false)
-   @JsonManagedReference
-   private Workshop workshop;
-
-   @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
-   private List<Furniture> furnitureList;
+    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
+    @JsonManagedReference(value = "carpenter-furniture")
+    private List<Furniture> furnitureList;
 
 }

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -16,8 +18,10 @@ public class Material {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long materialId;
+    private String name;
     private String colorName;
     private String colorHex;
-    private Double thickness;
-    private String name;
+    @ElementCollection
+    private List<Double> thickness;
+
 }
