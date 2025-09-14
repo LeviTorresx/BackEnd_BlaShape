@@ -5,6 +5,7 @@ import com.blashape.backend_blashape.DTOs.LoginRequest;
 import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
+import com.blashape.backend_blashape.entitys.UserRole;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -43,7 +44,7 @@ public class AuthService {
         if (dto.getLastName() == null || dto.getLastName().isBlank()) {
             throw new IllegalArgumentException("El apellido es obligatorio");
         }
-        if (dto.getIdNumber() == null || dto.getIdNumber().isBlank()) {
+        if (dto.getDni() == null || dto.getDni().isBlank()) {
             throw new IllegalArgumentException("La cédula es obligatoria");
         }
         if (dto.getEmail() == null || dto.getEmail().isBlank()) {
@@ -64,7 +65,7 @@ public class AuthService {
         if (carpenterRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("El correo ya está registrado");
         }
-        if (carpenterRepository.existsByIdNumber(dto.getIdNumber())) {
+        if (carpenterRepository.existsByDni(dto.getDni())) {
             throw new IllegalArgumentException("La cédula ya está registrada");
         }
 
@@ -73,6 +74,7 @@ public class AuthService {
         carpenter.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         carpenter.setWorkshop(null);
+        carpenter.setRole(UserRole.CARPENTER);
 
         Carpenter saved = carpenterRepository.save(carpenter);
 

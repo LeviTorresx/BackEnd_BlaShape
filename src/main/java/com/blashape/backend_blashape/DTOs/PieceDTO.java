@@ -8,9 +8,16 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PieceDTO extends SheetDTO {
+public class PieceDTO{
+    private Long pieceId;
     private int quantity;
-    private Long furnitureId;
+    private Double height;
+    private Double width;
+    private Double thickness;
+    private String colorName;
+    private String colorHex;
+    private String materialName;
+
     private EdgesDTO edges;
 
 }

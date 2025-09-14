@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -17,7 +18,10 @@ public class FurnitureDTO {
     private String documentUrl;
     private String imageInitUrl;
     private String imageEndUrl;
+    private LocalDate creationDate;
+    private LocalDate endDate;
     private FurnitureStatus status;
+
     private Long carpenterId;
     private Long customerId;
     private List<PieceDTO> pieces;

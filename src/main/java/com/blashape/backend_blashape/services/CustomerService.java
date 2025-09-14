@@ -3,6 +3,7 @@ package com.blashape.backend_blashape.services;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.entitys.Customer;
 import com.blashape.backend_blashape.entitys.Furniture;
+import com.blashape.backend_blashape.entitys.UserRole;
 import com.blashape.backend_blashape.repositories.CustomerRepository;
 import com.blashape.backend_blashape.repositories.FurnitureRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +37,8 @@ public class CustomerService {
             customer.setFurnitureList(furnitureList);
         }
 
+        customer.setRole(UserRole.DEFAULT);
+
         Customer saved = customerRepository.save(customer);
 
         return mapToDTO(saved);
@@ -63,8 +66,8 @@ public class CustomerService {
         if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
             customer.setLastName(dto.getLastName());
         }
-        if (dto.getIdNumber() != null && !dto.getIdNumber().isBlank()) {
-            customer.setIdNumber(dto.getIdNumber());
+        if (dto.getDni() != null && !dto.getDni().isBlank()) {
+            customer.setDni(dto.getDni());
         }
         if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
             customer.setPhone(dto.getPhone());

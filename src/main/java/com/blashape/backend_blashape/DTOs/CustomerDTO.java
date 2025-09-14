@@ -13,9 +13,11 @@ public class CustomerDTO {
     private Long customerId;
     private String name;
     private String lastName;
-    private String idNumber;
+    private String dni;
     private String  phone;
     private String email;
+    private String role;
+
     private List<Long> furnitureListIds;
 
 }

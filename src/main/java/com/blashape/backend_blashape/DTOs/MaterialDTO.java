@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,6 +14,6 @@ public class MaterialDTO {
     private Long materialId;
     private String colorName;
     private String colorHex;
-    private Double thickness;
+    private List<Double> thickness;
     private String name;
 }

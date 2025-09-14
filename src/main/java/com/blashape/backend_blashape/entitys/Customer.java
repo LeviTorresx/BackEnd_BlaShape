@@ -1,5 +1,6 @@
 package com.blashape.backend_blashape.entitys;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,17 +15,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name ="customer")
-public class Customer {
+public class Customer extends User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
-    private String name;
-    private String lastName;
-    private String idNumber;
-    private String  phone;
-    private String email;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "customer-furniture")
     private List<Furniture> furnitureList;
 
 }
