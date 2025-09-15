@@ -6,6 +6,7 @@ import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.UserRole;
+import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -20,7 +21,7 @@ public class AuthService {
     private final CarpenterRepository carpenterRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
-    private final ObjectMapper objectMapper;
+    private final CarpenterMapper carpenterMapper;
 
     public LoginResponse login(LoginRequest request) {
         Carpenter carpenter = carpenterRepository.findByEmail(request.getEmail())
@@ -69,7 +70,7 @@ public class AuthService {
             throw new IllegalArgumentException("La cédula ya está registrada");
         }
 
-        Carpenter carpenter = objectMapper.convertValue(dto, Carpenter.class);
+        Carpenter carpenter = carpenterMapper.toEntity(dto);
 
         carpenter.setPassword(passwordEncoder.encode(dto.getPassword()));
 
@@ -78,7 +79,7 @@ public class AuthService {
 
         Carpenter saved = carpenterRepository.save(carpenter);
 
-        CarpenterDTO response = objectMapper.convertValue(saved, CarpenterDTO.class);
+        CarpenterDTO response = carpenterMapper.toDTO(saved);
         response.setWorkshopId(null);
         response.setPassword(null);
         return response;
@@ -94,7 +95,7 @@ public class AuthService {
         Carpenter user = carpenterRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        CarpenterDTO dto = objectMapper.convertValue(user, CarpenterDTO.class);
+        CarpenterDTO dto = carpenterMapper.toDTO(user);
         dto.setPassword(null);
         return dto;
     }
