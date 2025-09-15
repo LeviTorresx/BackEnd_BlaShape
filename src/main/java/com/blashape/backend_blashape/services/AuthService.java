@@ -8,7 +8,7 @@ import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.UserRole;
 import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -99,6 +99,49 @@ public class AuthService {
         dto.setPassword(null);
         return dto;
     }
+
+    public CarpenterDTO updateProfile(String token, Long id, CarpenterDTO dto) {
+        if (token == null || token.isEmpty()) {
+            throw new RuntimeException("Token missing");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+
+        Carpenter existing = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado"));
+
+        if (!existing.getCarpenterId().equals(id)) {
+            throw new SecurityException("No tienes permisos para modificar este perfil");
+        }
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            existing.setName(dto.getName());
+        }
+        if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
+            existing.setLastName(dto.getLastName());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            if (!dto.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                throw new IllegalArgumentException("El formato del correo es inválido");
+            }
+            if (!dto.getEmail().equals(existing.getEmail()) &&
+                    carpenterRepository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("El correo ya está en uso");
+            }
+            existing.setEmail(dto.getEmail());
+        }
+        if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
+            existing.setPhone(dto.getPhone());
+        }
+
+        Carpenter saved = carpenterRepository.save(existing);
+        CarpenterDTO updated = carpenterMapper.toDTO(saved);
+        updated.setPassword(null);
+
+        return updated;
+    }
+
+
 
     public void updatePassword(String email, String newPassword) {
         Carpenter carpenter = carpenterRepository.findByEmail(email)

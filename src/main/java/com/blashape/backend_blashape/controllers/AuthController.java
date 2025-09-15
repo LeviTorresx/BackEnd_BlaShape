@@ -58,6 +58,21 @@ public class AuthController {
         return ResponseEntity.ok(carpenterDTO);
     }
 
+    @PutMapping("/update-profile/{id}")
+    public ResponseEntity<CarpenterDTO> updateProfile(
+            @CookieValue(name = "jwt", required = false) String token,
+            @PathVariable Long id,
+            @RequestBody CarpenterDTO dto) {
+
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        CarpenterDTO updated = authService.updateProfile(token, id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+
     @PostMapping("/send-2fa")
     public ResponseEntity<String> send2FA(HttpServletRequest request) {
         String token = jwtUtil.extractTokenFromCookie(request);
