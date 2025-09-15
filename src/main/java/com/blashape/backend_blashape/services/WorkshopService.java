@@ -3,6 +3,7 @@ package com.blashape.backend_blashape.services;
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Workshop;
+import com.blashape.backend_blashape.mapper.WorkshopMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.WorkshopRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +18,7 @@ public class WorkshopService {
 
     private final WorkshopRepository workshopRepository;
     private final CarpenterRepository carpenterRepository;
+    private final WorkshopMapper workshopMapper;
 
     public WorkshopDTO createWorkshop(WorkshopDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -32,40 +34,28 @@ public class WorkshopService {
             throw new IllegalArgumentException("Debe indicar el ID del carpintero que crea el taller");
         }
 
-        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Carpintero no encontrado con ID: " + dto.getCarpenterId()
-                ));
+        Workshop workshop = workshopMapper.toEntity(dto);
 
-        if (carpenter.getWorkshop() != null) {
-            throw new IllegalStateException("El carpintero ya tiene un taller asignado");
+        if (dto.getCarpenterId() != null) {
+            Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
+                    .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
+            workshop.setCarpenter(carpenter);
         }
 
-        Workshop workshop = new Workshop();
-        workshop.setName(dto.getName());
-        workshop.setAddress(dto.getAddress());
-        workshop.setPhone(dto.getPhone());
-        workshop.setNit(dto.getNit());
-        workshop.setCarpenter(carpenter);
-
-        Workshop savedWorkshop = workshopRepository.save(workshop);
-
-        carpenter.setWorkshop(savedWorkshop);
-        carpenterRepository.save(carpenter);
-
-        return toDto(savedWorkshop);
+        Workshop saved = workshopRepository.save(workshop);
+        return workshopMapper.toDto(saved);
     }
 
     public WorkshopDTO getWorkshop(Long id) {
         Workshop workshop = workshopRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Taller no encontrado con ID: " + id));
-        return toDto(workshop);
+        return workshopMapper.toDto(workshop);
     }
 
     public List<WorkshopDTO> getAllWorkshops() {
         return workshopRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(workshopMapper::toDto)
                 .toList();
     }
 
@@ -77,7 +67,7 @@ public class WorkshopService {
         if (workshop == null) {
             throw new EntityNotFoundException("El carpintero con ID " + carpenterId + " no tiene taller asignado");
         }
-        return toDto(workshop);
+        return workshopMapper.toDto(workshop);
     }
 
     public WorkshopDTO updateWorkshop(Long id, WorkshopDTO dto) {
@@ -98,7 +88,7 @@ public class WorkshopService {
         }
 
         Workshop updated = workshopRepository.save(workshop);
-        return toDto(updated);
+        return workshopMapper.toDto(updated);
     }
 
     public void deleteWorkshop(Long id) {
@@ -112,19 +102,6 @@ public class WorkshopService {
         }
 
         workshopRepository.delete(workshop);
-    }
-
-    private WorkshopDTO toDto(Workshop workshop) {
-        WorkshopDTO dto = new WorkshopDTO();
-        dto.setWorkshopId(workshop.getWorkshopId());
-        dto.setName(workshop.getName());
-        dto.setAddress(workshop.getAddress());
-        dto.setPhone(workshop.getPhone());
-        dto.setNit(workshop.getNit());
-        if (workshop.getCarpenter() != null) {
-            dto.setCarpenterId(workshop.getCarpenter().getCarpenterId());
-        }
-        return dto;
     }
 }
 

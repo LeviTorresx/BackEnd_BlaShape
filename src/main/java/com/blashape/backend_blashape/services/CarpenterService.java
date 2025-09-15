@@ -1,12 +1,10 @@
 package com.blashape.backend_blashape.services;
 import com.blashape.backend_blashape.DTOs.CarpenterDTO;
 import com.blashape.backend_blashape.entitys.Carpenter;
+import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
-import com.blashape.backend_blashape.repositories.WorkshopRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,16 +12,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CarpenterService {
-    private CarpenterRepository carpenterRepository;
-    private WorkshopRepository workshopRepository;
-    private ObjectMapper  objectMapper;
-    private PasswordEncoder passwordEncoder;
+    private final CarpenterRepository carpenterRepository;
+    private final CarpenterMapper carpenterMapper;
 
     public CarpenterDTO getCarpenterById(Long id) {
         Carpenter carpenter = carpenterRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
 
-        CarpenterDTO dto = objectMapper.convertValue(carpenter, CarpenterDTO.class);
+        CarpenterDTO dto = carpenterMapper.toDTO(carpenter);
         dto.setWorkshopId(carpenter.getWorkshop() != null ? carpenter.getWorkshop().getWorkshopId() : null);
         return dto;
     }
@@ -33,7 +29,7 @@ public class CarpenterService {
 
         return carpenters.stream()
                 .map(carpenter -> {
-                    CarpenterDTO dto = objectMapper.convertValue(carpenter, CarpenterDTO.class);
+                    CarpenterDTO dto = carpenterMapper.toDTO(carpenter);
                     dto.setWorkshopId(carpenter.getWorkshop() != null ? carpenter.getWorkshop().getWorkshopId() : null);
                     return dto;
                 })
@@ -65,9 +61,7 @@ public class CarpenterService {
 
         Carpenter updated = carpenterRepository.save(existing);
 
-        CarpenterDTO response = objectMapper.convertValue(updated, CarpenterDTO.class);
-        response.setWorkshopId(updated.getWorkshop() != null ? updated.getWorkshop().getWorkshopId() : null);
-        return response;
+        return  carpenterMapper.toDTO(updated);
     }
 
     public void deleteCarpenter(Long id) {
