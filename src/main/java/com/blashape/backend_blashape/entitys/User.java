@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @MappedSuperclass
-public abstract class User {
+public class User {
     private String name;
     private String lastName;
     private String dni;
