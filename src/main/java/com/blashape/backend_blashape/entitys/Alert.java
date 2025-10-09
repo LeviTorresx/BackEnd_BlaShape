@@ -16,7 +16,7 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="alert")
+@Table(name="alerts")
 
 public class Alert {
     @Id
