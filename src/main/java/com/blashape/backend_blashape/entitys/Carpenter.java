@@ -32,4 +32,7 @@ public class Carpenter extends User {
     @JsonManagedReference(value = "carpenter-furniture")
     private List<Furniture> furnitureList;
 
+    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
+    @JsonManagedReference(value = "carpenter-alert")
+    private List<Alert> alertList;
 }

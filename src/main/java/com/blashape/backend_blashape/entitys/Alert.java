@@ -1,13 +1,13 @@
 package com.blashape.backend_blashape.entitys;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.print.attribute.standard.Severity;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -29,4 +29,9 @@ public class Alert {
 
     @Enumerated(EnumType.STRING)
     private Severity severity;
+
+    @ManyToOne
+    @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
+    @JsonBackReference(value = "carpenter-alert")
+    private Carpenter carpenter;
 }

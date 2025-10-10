@@ -5,6 +5,7 @@ import com.blashape.backend_blashape.DTOs.AlertDTO;
 import com.blashape.backend_blashape.entitys.Alert;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,28 +13,37 @@ import java.time.format.DateTimeFormatter;
 
 @Mapper(componentModel = "spring")
 public interface AlertMapper {
-    @Mapping(target = "date", expression = "java(convertToDate(dto.getDate()))")
-    @Mapping(target = "time", expression = "java(convertToTime(dto.getTime()))")
+    @Mapping(target = "carpenter", ignore = true)
+    @Mapping(target = "date", source = "date", qualifiedByName = "stringToLocalDate")
+    @Mapping(target = "time", source = "time", qualifiedByName = "stringToLocalTime")
     Alert toEntity(AlertDTO dto);
 
-    @Mapping(target = "date", expression = "java(formatDate(alert.getDate()))")
-    @Mapping(target = "time", expression = "java(formatTime(alert.getTime()))")
+    @Mapping(target = "carpenterId", source = "carpenter.carpenterId")
+    @Mapping(source = "date", target = "date", qualifiedByName = "localDateToString")
+    @Mapping(source = "time", target = "time", qualifiedByName = "localTimeToString")
     AlertDTO toDTO(Alert alert);
 
-    default LocalDate convertToDate(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty()) return null;
-        return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-    }
-    default LocalTime convertToTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) return null;
-        return LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm:ss"));
+    @Named("stringToLocalDate")
+    default LocalDate stringToLocalDate(String date) {
+        if (date == null) return null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        return LocalDate.parse(date, formatter);
     }
 
-    default String formatDate(LocalDate date) {
+    @Named("stringToLocalTime")
+    default LocalTime stringToLocalTime(String time) {
+        if (time == null) return null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        return LocalTime.parse(time, formatter);
+    }
+
+    @Named("localDateToString")
+    default String localDateToString(LocalDate date) {
         return date != null ? date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : null;
     }
 
-    default String formatTime(LocalTime time) {
+    @Named("localTimeToString")
+    default String localTimeToString(LocalTime time) {
         return time != null ? time.format(DateTimeFormatter.ofPattern("HH:mm:ss")) : null;
     }
 }

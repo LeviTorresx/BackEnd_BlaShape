@@ -23,5 +23,7 @@ public class AlertDTO {
 
     @JsonFormat(pattern = "HH:mm:ss")
     LocalTime time;
+
     Severity severity;
+    Long carpenterId;
 }
