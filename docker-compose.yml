@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   backend-blashape:
-    build: .
+    image: leviwzz/backend-blashape:latest
     container_name: backend-blashape
     env_file:
       - .env
