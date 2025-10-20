@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.entitys;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -42,8 +43,8 @@ public class Furniture {
     @JsonBackReference(value = "customer-furniture")
     private Customer customer;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "furniture_id")
-    private List<Piece> pieces;
+    //@OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
+    //@JsonManagedReference
+    //private Cutting cutting;
 
 }

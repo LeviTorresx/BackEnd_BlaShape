@@ -39,4 +39,10 @@ public class AlertController {
         alertService.deleteAlert(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/generate-automatic")
+    public ResponseEntity<String> generateAutomaticAlert() {
+        alertService.generateAutomaticAlerts();
+        return ResponseEntity.ok("Alertas automáticas generadas exitosamente.");
+    }
 }

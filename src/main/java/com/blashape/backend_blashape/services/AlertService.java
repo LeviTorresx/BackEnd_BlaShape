@@ -4,14 +4,20 @@ package com.blashape.backend_blashape.services;
 import com.blashape.backend_blashape.DTOs.AlertDTO;
 import com.blashape.backend_blashape.entitys.Alert;
 import com.blashape.backend_blashape.entitys.Carpenter;
+import com.blashape.backend_blashape.entitys.Furniture;
+import com.blashape.backend_blashape.entitys.Severity;
 import com.blashape.backend_blashape.mapper.AlertMapper;
 import com.blashape.backend_blashape.repositories.AlertRepository;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
+import com.blashape.backend_blashape.repositories.FurnitureRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -20,6 +26,7 @@ public class AlertService {
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
     private final CarpenterRepository carpenterRepository;
+    private final FurnitureRepository furnitureRepository;
 
     public AlertDTO createAlert(AlertDTO dto) {
 
@@ -102,5 +109,48 @@ public class AlertService {
                 .orElseThrow(() -> new EntityNotFoundException("Alerta no encontrada con ID: " + id));
 
         alertRepository.delete(alert);
+    }
+
+    public void generateAutomaticAlerts(){
+        LocalDate today = LocalDate.now();
+        LocalDate weekLater = today.plusDays(7);
+
+        List<Furniture> furnitureList = furnitureRepository.findByEndDateAndFutureDate(today, weekLater);
+
+        for(Furniture furniture : furnitureList){
+            if(furniture.getCarpenter() == null) continue;
+
+            long daysLeft = ChronoUnit.DAYS.between(today, furniture.getEndDate());
+            Severity severity = null;
+            String message = null;
+            String alertMessage = "El plazo para el mueble '"+furniture.getName()+"' (ID: "+furniture.getFurnitureId().toString()+") vence";
+
+            if (daysLeft == 7) {
+                severity = Severity.MEDIUM;
+                message = alertMessage+" dentro de una semana.";
+            } else if (daysLeft <= 3 && daysLeft > 1) {
+                severity = Severity.HIGH;
+                message = alertMessage+" en menos de tres días.";
+            } else if (daysLeft == 1 || daysLeft == 0) {
+                severity = Severity.CRITICAL;
+                message = daysLeft == 1
+                        ? alertMessage+" vence mañana."
+                        : alertMessage+" vence hoy.";
+            }
+
+            if (severity == null) continue;
+
+            boolean exists = alertRepository.existsByCarpenterAndDateAndMessage(furniture.getCarpenter(), today, furniture.getName());
+
+            if (!exists) {
+                Alert alert = new Alert();
+                alert.setMessage(message);
+                alert.setDate(today);
+                alert.setTime(LocalTime.now());
+                alert.setSeverity(severity);
+                alert.setCarpenter(furniture.getCarpenter());
+                alertRepository.save(alert);
+            }
+        }
     }
 }
