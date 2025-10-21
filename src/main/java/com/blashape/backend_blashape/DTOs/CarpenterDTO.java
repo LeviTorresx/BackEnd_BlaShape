@@ -20,6 +20,6 @@ public class CarpenterDTO {
     private String phone;
     private String role;
 
-    private Long workshopId;
+    private WorkshopDTO workshop;
     private List<Long> furnitureListIds;
 }

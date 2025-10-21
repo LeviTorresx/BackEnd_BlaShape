@@ -19,22 +19,16 @@ public class CarpenterService {
         Carpenter carpenter = carpenterRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
 
-        CarpenterDTO dto = carpenterMapper.toDTO(carpenter);
-        dto.setWorkshopId(carpenter.getWorkshop() != null ? carpenter.getWorkshop().getWorkshopId() : null);
-        return dto;
+        return carpenterMapper.toDTO(carpenter);
     }
 
     public List<CarpenterDTO> getAllCarpenters() {
-        List<Carpenter> carpenters = carpenterRepository.findAll();
-
-        return carpenters.stream()
-                .map(carpenter -> {
-                    CarpenterDTO dto = carpenterMapper.toDTO(carpenter);
-                    dto.setWorkshopId(carpenter.getWorkshop() != null ? carpenter.getWorkshop().getWorkshopId() : null);
-                    return dto;
-                })
+        return carpenterRepository.findAll()
+                .stream()
+                .map(carpenterMapper::toDTO)
                 .toList();
     }
+
 
     public CarpenterDTO updateCarpenter(Long id, CarpenterDTO dto) {
         Carpenter existing = carpenterRepository.findById(id)

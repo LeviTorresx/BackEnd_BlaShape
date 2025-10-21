@@ -13,23 +13,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api_BS/auth")
+@CrossOrigin("http://localhost:3000")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final JwtUtil jwtUtil;
+    private final String mKey = "message";
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody CarpenterDTO dto) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody CarpenterDTO dto) {
         CarpenterDTO response = authService.register(dto);
-        return ResponseEntity.ok("Registro correcto "+"Bienvenido: "+response.getName() );
+        return ResponseEntity.ok(Map.of(mKey,"Registro correcto "+"Bienvenido: "+response.getName()) );
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(
+    public ResponseEntity<Map<String, String>> login(
             @RequestBody LoginRequest request,
             HttpServletResponse response) {
 
@@ -44,9 +48,9 @@ public class AuthController {
 
         response.addCookie(cookie);
 
-        return ResponseEntity.ok("Login successful");
-    }
+        return ResponseEntity.ok(Map.of(mKey, "Inicio de sesión exitoso"));
 
+    }
 
     @GetMapping("/me")
     public ResponseEntity<CarpenterDTO> getUser(@CookieValue(name = "jwt", required = false) String token) {
@@ -113,8 +117,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletResponse response) {
+    public ResponseEntity<Map<String, String>>  logout(HttpServletResponse response) {
         authService.logout(response);
-        return ResponseEntity.ok("Sesión cerrada correctamente.");
+        return ResponseEntity.ok(Map.of(mKey, "Sesión cerrada exitosamente"));
     }
 }

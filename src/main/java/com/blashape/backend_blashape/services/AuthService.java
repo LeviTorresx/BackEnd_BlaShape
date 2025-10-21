@@ -25,10 +25,10 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         Carpenter carpenter = carpenterRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
 
         if (!passwordEncoder.matches(request.getPassword(), carpenter.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new RuntimeException("Contraseña incorrecta");
         }
 
         String token = jwtUtil.generateToken(carpenter.getEmail(), carpenter.getCarpenterId());
@@ -80,7 +80,7 @@ public class AuthService {
         Carpenter saved = carpenterRepository.save(carpenter);
 
         CarpenterDTO response = carpenterMapper.toDTO(saved);
-        response.setWorkshopId(null);
+        response.setWorkshop(null);
         response.setPassword(null);
         return response;
     }
@@ -159,6 +159,7 @@ public class AuthService {
         cookie.setSecure(true); // usar true en producción con HTTPS
         cookie.setPath("/");
         cookie.setMaxAge(0); // expira inmediatamente
+        cookie.setAttribute("SameSite", "None");
 
         response.addCookie(cookie);
     }
