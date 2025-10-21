@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api_BS/workshop")
@@ -13,11 +15,13 @@ import org.springframework.web.bind.annotation.*;
 public class WorkshopController {
 
     private final WorkshopService workshopService;
+    private final String mKey = "message";
 
 
     @PostMapping("/create")
-    public ResponseEntity<WorkshopDTO> createWorkshop(@RequestBody WorkshopDTO dto) {
-        return ResponseEntity.ok(workshopService.createWorkshop(dto));
+    public ResponseEntity<Map<String, String>> createWorkshop(@RequestBody WorkshopDTO dto) {
+        WorkshopDTO newWorkshop = workshopService.createWorkshop(dto);
+        return ResponseEntity.ok(Map.of(mKey,"Taller " +newWorkshop.getName() +" creado correctamente"));
     }
 
 
