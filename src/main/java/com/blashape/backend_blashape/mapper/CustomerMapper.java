@@ -11,9 +11,11 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface CustomerMapper {
     @Mapping(target ="furnitureListIds", source = "furnitureList")
+    @Mapping(target = "carpenterId", source = "carpenter.carpenterId")
     CustomerDTO toDTO(Customer customer);
 
     @Mapping(target = "furnitureList", ignore = true)
+    @Mapping(target = "carpenter", ignore = true)
     Customer toEntity(CustomerDTO dto);
 
     default List<Long> mapFurnitureListToIds(List<Furniture> furnitureList) {

@@ -1,17 +1,20 @@
 package com.blashape.backend_blashape.services;
 
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
+import com.blashape.backend_blashape.config.JwtUtil;
+import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Customer;
 import com.blashape.backend_blashape.entitys.Furniture;
 import com.blashape.backend_blashape.entitys.UserRole;
 import com.blashape.backend_blashape.mapper.CustomerMapper;
+import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.CustomerRepository;
 import com.blashape.backend_blashape.repositories.FurnitureRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,7 +23,8 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final FurnitureRepository furnitureRepository;
-    private final ObjectMapper objectMapper;
+    private final CarpenterRepository carpenterRepository;
+    private final JwtUtil jwtUtil;
     private final CustomerMapper customerMapper;
     
     public CustomerDTO createCustomer(CustomerDTO dto) {
@@ -44,12 +48,23 @@ public class CustomerService {
             throw new IllegalArgumentException("El teléfono del cliente es obligatorio");
         }
 
+        if (dto.getCarpenterId() == null){
+            throw new IllegalArgumentException("El cliente debe tener un carpintero asociado");
+        }
+
+        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
+                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
+
         Customer customer = customerMapper.toEntity(dto);
+        customer.setCarpenter(carpenter);
+
 
         // Si vienen muebles asociados
         if (dto.getFurnitureListIds() != null && !dto.getFurnitureListIds().isEmpty()) {
             List<Furniture> furnitureList = furnitureRepository.findAllById(dto.getFurnitureListIds());
             customer.setFurnitureList(furnitureList);
+        } else {
+            customer.setFurnitureList(new ArrayList<>());
         }
 
         customer.setRole(UserRole.DEFAULT);
@@ -65,11 +80,26 @@ public class CustomerService {
         return customerMapper.toDTO(customer);
     }
 
-    public List<CustomerDTO> getAllCustomers() {
-        return customerRepository.findAll().stream()
+    public List<CustomerDTO> getCustomersByToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token no proporcionado");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Token inválido o expirado");
+        }
+
+        Carpenter carpenter = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado para el token"));
+
+        List<Customer> customers = customerRepository.findByCarpenter_CarpenterId(carpenter.getCarpenterId());
+        return customers.stream()
                 .map(customerMapper::toDTO)
                 .toList();
     }
+
+
 
     public CustomerDTO updateCustomer(Long customerId, CustomerDTO dto) {
         Customer customer = customerRepository.findById(customerId)
