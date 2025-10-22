@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
+import com.blashape.backend_blashape.DTOs.WorkshopResponse;
 import com.blashape.backend_blashape.services.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ public class WorkshopController {
 
     private final WorkshopService workshopService;
     private final String mKey = "message";
+    private final String wKey = "workshop";
 
 
     @PostMapping("/create")
@@ -45,8 +47,9 @@ public class WorkshopController {
 
 
     @PutMapping("/edit/{id}")
-    public ResponseEntity<WorkshopDTO> updateWorkshop(@PathVariable Long id, @RequestBody WorkshopDTO dto) {
-        return ResponseEntity.ok(workshopService.updateWorkshop(id, dto));
+    public ResponseEntity<WorkshopResponse> updateWorkshop(@PathVariable Long id, @RequestBody WorkshopDTO dto) {
+        WorkshopDTO updateWorkshop = workshopService.updateWorkshop(id, dto);
+        return ResponseEntity.ok( new WorkshopResponse("Taller "+ updateWorkshop.getName()+" actualizado exitosamente", updateWorkshop ) );
     }
 
     @DeleteMapping("/delete/{id}")

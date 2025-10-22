@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.CarpenterDTO;
+import com.blashape.backend_blashape.DTOs.CarpenterResponse;
 import com.blashape.backend_blashape.DTOs.LoginRequest;
 import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
@@ -63,7 +64,7 @@ public class AuthController {
     }
 
     @PutMapping("/update-profile/{id}")
-    public ResponseEntity<CarpenterDTO> updateProfile(
+    public ResponseEntity<CarpenterResponse> updateProfile(
             @CookieValue(name = "jwt", required = false) String token,
             @PathVariable Long id,
             @RequestBody CarpenterDTO dto) {
@@ -73,7 +74,7 @@ public class AuthController {
         }
 
         CarpenterDTO updated = authService.updateProfile(token, id, dto);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(new CarpenterResponse("Carpintero actualizado exitosamente", updated));
     }
 
 

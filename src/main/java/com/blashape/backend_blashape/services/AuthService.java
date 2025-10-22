@@ -110,6 +110,10 @@ public class AuthService {
         Carpenter existing = carpenterRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario autenticado no encontrado"));
 
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("No se permite modificar la contraseña desde esta ruta");
+        }
+
         if (!existing.getCarpenterId().equals(id)) {
             throw new SecurityException("No tienes permisos para modificar este perfil");
         }

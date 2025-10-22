@@ -30,7 +30,7 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.getAllCustomers());
     }
 
-    @PostMapping("/edit/{id}")
+    @PutMapping("/edit/{id}")
     public ResponseEntity<CustomerDTO> editCustomer(@PathVariable Long id, @RequestBody CustomerDTO dto){
         return ResponseEntity.ok(customerService.updateCustomer(id, dto));
     }
