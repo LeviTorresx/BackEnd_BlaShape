@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -29,5 +30,11 @@ public class Customer extends User {
     @JoinColumn(name = "carpenter_id")
     @JsonBackReference(value = "carpenter-customer")
     private Carpenter carpenter;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 }

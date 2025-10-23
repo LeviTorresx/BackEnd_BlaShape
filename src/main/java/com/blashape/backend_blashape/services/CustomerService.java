@@ -14,6 +14,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,7 +94,9 @@ public class CustomerService {
         Carpenter carpenter = carpenterRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado para el token"));
 
-        List<Customer> customers = customerRepository.findByCarpenter_CarpenterId(carpenter.getCarpenterId());
+        List<Customer> customers = customerRepository.findActiveCustomersByCarpenterId(
+                carpenter.getCarpenterId()
+        );
         return customers.stream()
                 .map(customerMapper::toDTO)
                 .toList();
@@ -126,10 +129,12 @@ public class CustomerService {
     }
 
     public void deleteCustomer(Long customerId) {
-        if (!customerRepository.existsById(customerId)) {
-            throw new EntityNotFoundException("Cliente no encontrado con ID: " + customerId);
-        }
-        customerRepository.deleteById(customerId);
+        Customer customer =  customerRepository.findById(customerId)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: "+ customerId));
+        customer.setDeleted(true);
+        customer.setDeletedAt(LocalDateTime.now());
+
+        customerRepository.save(customer);
     }
 }
 
