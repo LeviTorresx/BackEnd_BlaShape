@@ -47,4 +47,5 @@ public class Furniture {
     //@JsonManagedReference
     //private Cutting cutting;
 
+    //restructur
 }
