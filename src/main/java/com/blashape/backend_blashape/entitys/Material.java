@@ -21,7 +21,7 @@ public class Material {
     private String name;
 
     @Embedded
-    private Color color;
+    private List<Color> colors;
 
     @ElementCollection
     private List<Double> thickness;

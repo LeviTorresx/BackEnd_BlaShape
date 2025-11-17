@@ -23,4 +23,8 @@ public class Sheet {
     @ManyToOne
     @JoinColumn(name = "material_id", referencedColumnName = "materialId")
     private Material material;
+
+    @ManyToOne
+    @JoinColumn(name = "cutting")
+    private Cutting cutting;
 }

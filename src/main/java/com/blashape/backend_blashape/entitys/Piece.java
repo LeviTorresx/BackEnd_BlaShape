@@ -27,4 +27,8 @@ public class Piece{
 
     @Embedded
     private Edges edges;
+
+    @ManyToOne
+    @JoinColumn(name = "cutting")
+    private Cutting cutting;
 }
