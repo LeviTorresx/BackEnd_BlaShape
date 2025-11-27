@@ -44,6 +44,15 @@ public class Furniture {
     private Customer customer;
 
     @OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonManagedReference("furniture-cutting")
     private Cutting cutting;
+
+    public void setCutting(Cutting cutting) {
+        this.cutting = cutting;
+
+        // Sincroniza el otro lado
+        if (cutting != null && cutting.getFurniture() != this) {
+            cutting.setFurniture(this);
+        }
+    }
 }

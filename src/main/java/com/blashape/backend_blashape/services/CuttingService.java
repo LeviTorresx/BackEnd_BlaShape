@@ -27,15 +27,19 @@ public class CuttingService {
     @Transactional
     public CuttingDTO createCutting(CuttingDTO dto) {
 
-        if (cuttingRepository.existsByFurnitureFurnitureId(dto.getFurnitureId())) {
-            throw new RuntimeException("Este mueble ya tiene Cutting, use updateCutting en su lugar");
-        }
-
-        Furniture furniture = furnitureRepository.findById(dto.getFurnitureId())
-                .orElseThrow(() -> new RuntimeException("Furniture no encontrado"));
-
         Cutting cutting = cuttingMapper.toEntity(dto);
-        cutting.setFurniture(furniture);
+
+        if (dto.getFurnitureId() != null) {
+
+            if (cuttingRepository.existsByFurnitureFurnitureId(dto.getFurnitureId())) {
+                throw new RuntimeException("Este mueble ya tiene Cutting, use updateCutting en su lugar");
+            }
+
+            Furniture furniture = furnitureRepository.findById(dto.getFurnitureId())
+                    .orElseThrow(() -> new RuntimeException("Furniture no encontrado"));
+
+            cutting.setFurniture(furniture);
+        }
 
         List<Piece> pieces = dto.getPieces().stream()
                 .map(pieceMapper::toEntity)
@@ -47,7 +51,6 @@ public class CuttingService {
         Cutting saved = cuttingRepository.save(cutting);
         return cuttingMapper.toDTO(saved);
     }
-
 
     public CuttingDTO getByFurnitureId(Long furnitureId) {
 
