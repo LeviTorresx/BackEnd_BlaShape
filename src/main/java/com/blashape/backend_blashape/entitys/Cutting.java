@@ -25,7 +25,4 @@ public class Cutting {
 
     @OneToMany(mappedBy = "cutting", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Piece> pieces;
-
-    @OneToMany(mappedBy = "cutting", cascade = CascadeType.ALL)
-    private List<Sheet> sheets;
 }

@@ -20,7 +20,7 @@ public class Material {
     private Long materialId;
     private String name;
 
-    @Embedded
+    @ElementCollection
     private List<Color> colors;
 
     @ElementCollection

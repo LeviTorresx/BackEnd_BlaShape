@@ -21,8 +21,7 @@ public class FurnitureDTO {
     private LocalDate creationDate;
     private LocalDate endDate;
     private FurnitureStatus status;
-
+    private CuttingDTO cutting;
     private Long carpenterId;
     private Long customerId;
-    private List<PieceDTO> pieces;
 }

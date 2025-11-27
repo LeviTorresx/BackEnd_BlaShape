@@ -17,7 +17,5 @@ public class PieceDTO{
     private String colorName;
     private String colorHex;
     private String materialName;
-
     private EdgesDTO edges;
-
 }

@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name ="sheet")
+@Table(name ="sheets")
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Sheet {
     @Id
@@ -23,8 +23,4 @@ public class Sheet {
     @ManyToOne
     @JoinColumn(name = "material_id", referencedColumnName = "materialId")
     private Material material;
-
-    @ManyToOne
-    @JoinColumn(name = "cutting")
-    private Cutting cutting;
 }
