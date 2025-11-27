@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name ="sheets")
+@Table(name ="sheet")
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Sheet {
     @Id

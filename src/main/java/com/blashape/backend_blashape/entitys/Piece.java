@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "pieces")
+@Table(name = "piece")
 public class Piece{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +29,6 @@ public class Piece{
     private Edges edges;
 
     @ManyToOne
-    @JoinColumn(name = "cutting")
+    @JoinColumn(name = "cutting_id")
     private Cutting cutting;
 }

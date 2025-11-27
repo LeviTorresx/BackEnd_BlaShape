@@ -16,7 +16,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "furnitures")
+@Table(name = "furniture")
 public class Furniture {
 
     @Id

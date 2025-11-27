@@ -18,6 +18,8 @@ public class Cutting {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cuttingId;
+    private String materialName;
+    private Integer sheetQuantity;
 
     @OneToOne
     @JoinColumn(name="furniture_id")

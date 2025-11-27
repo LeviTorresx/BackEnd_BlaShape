@@ -10,9 +10,6 @@ public interface CuttingMapper {
 
     // ENTITY → DTO
     @Mapping(target = "furnitureId", source = "furniture.furnitureId")
-    // Estos dos NO existen en la entidad → se llenan en el servicio
-    @Mapping(target = "materialName", ignore = true)
-    @Mapping(target = "sheetQuantity", ignore = true)
     CuttingDTO toDTO(Cutting cutting);
 
     // DTO → ENTITY
