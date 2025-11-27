@@ -18,7 +18,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api_BS/auth")
-@CrossOrigin("http://localhost:3000")
 @RequiredArgsConstructor
 public class AuthController {
 

@@ -12,8 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class MaterialDTO {
     private Long materialId;
-    private String colorName;
-    private String colorHex;
-    private List<Double> thickness;
     private String name;
+    private List<ColorDTO> colors;
+    private List<Double> thickness;
 }

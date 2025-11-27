@@ -43,9 +43,7 @@ public class Furniture {
     @JsonBackReference(value = "customer-furniture")
     private Customer customer;
 
-    //@OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
-    //@JsonManagedReference
-    //private Cutting cutting;
-
-    //restructur
+    @OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Cutting cutting;
 }

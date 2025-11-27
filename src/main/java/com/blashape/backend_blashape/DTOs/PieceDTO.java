@@ -14,10 +14,7 @@ public class PieceDTO{
     private Double height;
     private Double width;
     private Double thickness;
-    private String colorName;
-    private String colorHex;
+    private ColorDTO color;
     private String materialName;
-
     private EdgesDTO edges;
-
 }

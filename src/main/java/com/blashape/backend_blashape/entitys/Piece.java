@@ -20,10 +20,15 @@ public class Piece{
     private Double height;
     private Double width;
     private Double thickness;
-    private String colorName;
-    private String colorHex;
     private String materialName;
 
     @Embedded
+    private Color color;
+
+    @Embedded
     private Edges edges;
+
+    @ManyToOne
+    @JoinColumn(name = "cutting_id")
+    private Cutting cutting;
 }
