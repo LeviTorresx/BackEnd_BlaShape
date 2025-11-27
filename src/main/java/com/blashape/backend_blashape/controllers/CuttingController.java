@@ -13,12 +13,17 @@ public class CuttingController {
     private final CuttingService cuttingService;
 
     @PostMapping("/create")
-    public ResponseEntity<CuttingDTO> createOrUpdate(@RequestBody CuttingDTO dto) {
-        return ResponseEntity.ok(cuttingService.saveCutting(dto));
+    public ResponseEntity<CuttingDTO> createCutting(@RequestBody CuttingDTO dto) {
+        return ResponseEntity.ok(cuttingService.createCutting(dto));
     }
 
     @GetMapping("/furniture/{furnitureId}")
     public ResponseEntity<CuttingDTO> getByFurniture(@PathVariable Long furnitureId) {
         return ResponseEntity.ok(cuttingService.getByFurnitureId(furnitureId));
+    }
+
+    @PutMapping("/edit/{cuttingId}")
+    public ResponseEntity<CuttingDTO> updateCutting(@PathVariable Long cuttingId, @RequestBody CuttingDTO dto) {
+        return ResponseEntity.ok(cuttingService.updateCutting(cuttingId, dto));
     }
 }

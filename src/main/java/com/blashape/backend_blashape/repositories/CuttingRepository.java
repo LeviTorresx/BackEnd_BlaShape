@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface CuttingRepository extends JpaRepository<Cutting, Long> {
     Optional<Cutting> findByFurnitureFurnitureId(Long furnitureId);
+    boolean existsByFurnitureFurnitureId(Long furnitureId);
 }

@@ -25,31 +25,29 @@ public class CuttingService {
     private final PieceMapper pieceMapper;
 
     @Transactional
-    public CuttingDTO saveCutting(CuttingDTO dto) {
+    public CuttingDTO createCutting(CuttingDTO dto) {
+
+        if (cuttingRepository.existsByFurnitureFurnitureId(dto.getFurnitureId())) {
+            throw new RuntimeException("Este mueble ya tiene Cutting, use updateCutting en su lugar");
+        }
+
         Furniture furniture = furnitureRepository.findById(dto.getFurnitureId())
-                .orElseThrow(() -> new RuntimeException("Furniture no encontrado con ID: " + dto.getFurnitureId()));
+                .orElseThrow(() -> new RuntimeException("Furniture no encontrado"));
 
         Cutting cutting = cuttingMapper.toEntity(dto);
         cutting.setFurniture(furniture);
 
-        if (dto.getPieces() != null) {
-            List<Piece> pieces = dto.getPieces().stream()
-                    .map(pieceMapper::toEntity)
-                    .peek(p -> p.setCutting(cutting)) // asignar relación bidireccional
-                    .toList();
+        List<Piece> pieces = dto.getPieces().stream()
+                .map(pieceMapper::toEntity)
+                .peek(p -> p.setCutting(cutting))
+                .toList();
 
-            cutting.setPieces(pieces);
-        }
+        cutting.setPieces(pieces);
 
         Cutting saved = cuttingRepository.save(cutting);
-
-        CuttingDTO response = cuttingMapper.toDTO(saved);
-
-        response.setMaterialName(dto.getMaterialName());
-        response.setSheetQuantity(dto.getSheetQuantity());
-
-        return response;
+        return cuttingMapper.toDTO(saved);
     }
+
 
     public CuttingDTO getByFurnitureId(Long furnitureId) {
 
@@ -61,5 +59,27 @@ public class CuttingService {
         return dto;
     }
 
+    @Transactional
+    public CuttingDTO updateCutting(Long cuttingId, CuttingDTO dto) {
 
+        Cutting cutting = cuttingRepository.findById(cuttingId)
+                .orElseThrow(() -> new RuntimeException("Cutting no encontrado"));
+
+        cutting.setMaterialName(dto.getMaterialName());
+        cutting.setSheetQuantity(dto.getSheetQuantity());
+
+        cutting.getPieces().clear();
+
+        if (dto.getPieces() != null) {
+            List<Piece> updatedPieces = dto.getPieces().stream()
+                    .map(pieceMapper::toEntity)
+                    .peek(p -> p.setCutting(cutting))
+                    .toList();
+
+            cutting.getPieces().addAll(updatedPieces);
+        }
+
+        Cutting saved = cuttingRepository.save(cutting);
+        return cuttingMapper.toDTO(saved);
+    }
 }
