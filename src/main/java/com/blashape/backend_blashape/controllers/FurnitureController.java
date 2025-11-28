@@ -32,7 +32,7 @@ public class FurnitureController {
         RequestFurniture requestFurniture = mapper.readValue(data, RequestFurniture.class);
         requestFurniture.setImageInit(imageInit);
         requestFurniture.setImageEnd(imageEnd);
-        requestFurniture.setDocument(imageEnd);
+        requestFurniture.setDocument(document);
 
         return ResponseEntity.ok(furnitureService.createFurniture(requestFurniture));
     }
@@ -54,8 +54,19 @@ public class FurnitureController {
         return ResponseEntity.ok(furniture);
     }
 
-    @PutMapping("/edit/{id}")
-    public ResponseEntity<FurnitureDTO> updateFurniture(@PathVariable Long id, @RequestBody FurnitureDTO dto) {
-        return ResponseEntity.ok(furnitureService.updateFurniture(id, dto));
+    @PutMapping(value = "/edit/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FurnitureDTO> updateFurniture(
+            @PathVariable Long id,
+            @RequestParam("data") String data,
+            @RequestPart(value = "imageInit", required = false) MultipartFile imageInit,
+            @RequestPart(value = "imageEnd", required = false) MultipartFile imageEnd,
+            @RequestPart (value ="document", required = false) MultipartFile document) throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        RequestFurniture requestFurniture = mapper.readValue(data, RequestFurniture.class);
+        requestFurniture.setImageInit(imageInit);
+        requestFurniture.setImageEnd(imageEnd);
+        requestFurniture.setDocument(document);
+        return ResponseEntity.ok(furnitureService.updateFurniture(id, requestFurniture));
     }
 }

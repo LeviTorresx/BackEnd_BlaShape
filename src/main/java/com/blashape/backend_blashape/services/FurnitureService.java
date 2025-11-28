@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,9 +54,9 @@ public class FurnitureService {
             throw new IllegalArgumentException("Debe indicar el ID del carpintero");
         }
 
-        String imageInitUrl = uploadIfPresent(request.getImageInit(), "imagen inicial");
-        String imageEndUrl = uploadIfPresent(request.getImageEnd(), "imagen final");
-        String documentUrl = uploadIfPresent(request.getDocument(), "documento");
+        String imageInitUrl = uploadImageIfPresent(request.getImageInit());
+        String imageEndUrl = uploadImageIfPresent(request.getImageEnd());
+        String documentUrl = uploadDocumentIfPresent(request.getDocument());
 
         // ==== MAPEO Request → DTO ====
         FurnitureDTO dto = furnitureMapper.toDTO(request);
@@ -97,22 +98,23 @@ public class FurnitureService {
         return furnitureMapper.toDTO(saved);
     }
 
-    /**
-     * Sube archivo opcionalmente; si está vacío, devuelve string vacío.
-     * Si falla lanza excepción con mensaje claro.
-     */
-    private String uploadIfPresent(MultipartFile file, String nombreCampo) {
-        if (file == null || file.isEmpty()) return "";
-
+    private String uploadImageIfPresent(MultipartFile file) {
+        if (file == null || file.isEmpty()) return null;
         try {
-            Map result = cloudinaryService.uploadFile(file);
-            return result.get("secure_url").toString();
+            return cloudinaryService.uploadImage(file);
         } catch (Exception e) {
-            throw new RuntimeException("Error al subir " + nombreCampo + ": " + e.getMessage());
+            throw new RuntimeException("Error al subir imagen: " + e.getMessage());
         }
     }
 
-
+    private String uploadDocumentIfPresent(MultipartFile file) {
+        if (file == null || file.isEmpty()) return null;
+        try {
+            return cloudinaryService.uploadDocument(file);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir documento: " + e.getMessage());
+        }
+    }
 
 
 
@@ -152,73 +154,87 @@ public class FurnitureService {
 
 
     @Transactional
-    public FurnitureDTO updateFurniture(Long id, FurnitureDTO dto) {
+    public FurnitureDTO updateFurniture(Long id, RequestFurniture request) {
 
+        // ====== BUSCAR EL MUEBLE ======
         Furniture furniture = furnitureRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Mueble no encontrado con ID: " + id));
 
-        // --- PROPIEDADES BÁSICAS ---
-        if (dto.getName() == null || dto.getName().isBlank()) {
+        // ====== VALIDACIONES ======
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new IllegalArgumentException("El mueble debe tener nombre");
         }
+        if (request.getType() == null) {
+            throw new IllegalArgumentException("El tipo de mueble es obligatorio");
+        }
 
-        furniture.setName(dto.getName());
-        if (dto.getImageInitURL() != null) furniture.setImageInitURL(dto.getImageInitURL());
-        if (dto.getImageEndURL() != null) furniture.setImageEndURL(dto.getImageEndURL());
-        if (dto.getDocumentURL() != null) furniture.setDocumentURL(dto.getDocumentURL());
-        if (dto.getEndDate() != null) furniture.setEndDate(dto.getEndDate());
-        if (dto.getStatus() != null) furniture.setStatus(dto.getStatus());
-        if (dto.getType() != null) furniture.setType(dto.getType());
+        // ====== SUBIDA OPCIONAL DE ARCHIVOS ======
+        String newImageInit = uploadImageIfPresent(request.getImageInit());
+        String newImageEnd  = uploadImageIfPresent(request.getImageEnd());
+        String newDocument  = uploadDocumentIfPresent(request.getDocument());
 
-        // --- ACTUALIZAR CARPENTER ---
-        if (dto.getCarpenterId() != null) {
-            Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
-                    .orElseThrow(() -> new RuntimeException("Carpenter no encontrado"));
+        // ====== ACTUALIZAR CAMPOS SIMPLES ======
+        furniture.setName(request.getName());
+        furniture.setStatus(request.getStatus());
+        furniture.setType(request.getType());
+
+        if (request.getEndDate() != null && !request.getEndDate().isBlank()) {
+            furniture.setEndDate(LocalDate.parse(request.getEndDate()));
+        }
+
+        if (request.getCreationDate() != null && !request.getCreationDate().isBlank()) {
+            furniture.setCreationDate(LocalDate.parse(request.getCreationDate()));
+        }
+
+        // Solo actualizar si se subió archivo nuevo
+        if (!newImageInit.isEmpty()) furniture.setImageInitURL(newImageInit);
+        if (!newImageEnd.isEmpty())  furniture.setImageEndURL(newImageEnd);
+        if (!newDocument.isEmpty())  furniture.setDocumentURL(newDocument);
+
+        // ====== ACTUALIZAR CARPENTER ======
+        if (request.getCarpenterId() != null) {
+            Carpenter carpenter = carpenterRepository.findById(request.getCarpenterId())
+                    .orElseThrow(() -> new RuntimeException("Carpintero no encontrado"));
             furniture.setCarpenter(carpenter);
         }
 
-        // --- ACTUALIZAR CUSTOMER ---
-        if (dto.getCustomerId() != null) {
-            Customer customer = customerRepository.findById(dto.getCustomerId())
-                    .orElseThrow(() -> new RuntimeException("Customer no encontrado"));
+        // ====== ACTUALIZAR CUSTOMER ======
+        if (request.getCustomerId() != null) {
+            Customer customer = customerRepository.findById(request.getCustomerId())
+                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
             furniture.setCustomer(customer);
         }
 
-        // --- ACTUALIZAR / CREAR CUTTING ---
-        Cutting cutting = furniture.getCutting();
+        // ====== ACTUALIZAR CUTTING ======
+        if (request.getCutting() != null) {
 
-        if (dto.getCutting() != null) {
+            Cutting cutting = furniture.getCutting();
 
-            // SI NO EXISTE, CREARLO
             if (cutting == null) {
                 cutting = new Cutting();
                 cutting.setFurniture(furniture);
                 furniture.setCutting(cutting);
             }
 
-            // ACTUALIZAR CAMPOS DEL CUTTING
-            cutting.setMaterialName(dto.getCutting().getMaterialName());
-            cutting.setSheetQuantity(dto.getCutting().getSheetQuantity());
-
-            // --- ACTUALIZAR PIECES ---
-            List<PieceDTO> dtoPieces = dto.getCutting().getPieces();
-
-            // Si vienen null → lista vacía
-            if (dtoPieces == null) dtoPieces = List.of();
+            cutting.setMaterialName(request.getCutting().getMaterialName());
+            cutting.setSheetQuantity(request.getCutting().getSheetQuantity());
 
             // Limpiar piezas actuales
             cutting.getPieces().clear();
 
-            // Reconstruir piezas
-            for (PieceDTO pDto : dtoPieces) {
-                Piece piece = pieceMapper.toEntity(pDto);
-                piece.setCutting(cutting); // MUY IMPORTANTE
-                cutting.getPieces().add(piece);
+            if (request.getCutting().getPieces() != null) {
+                for (PieceDTO pieceDTO : request.getCutting().getPieces()) {
+                    Piece piece = pieceMapper.toEntity(pieceDTO);
+                    piece.setCutting(cutting);
+                    cutting.getPieces().add(piece);
+                }
             }
         }
 
+        // ====== GUARDAR ======
         Furniture saved = furnitureRepository.save(furniture);
 
+        // Mapstruct devuelve DTO listo para respuesta
         return furnitureMapper.toDTO(saved);
     }
 
