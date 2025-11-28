@@ -44,6 +44,9 @@ public class FurnitureService {
         if (dto.getStatus() == null) {
             throw new IllegalArgumentException("El estado del mueble es obligatorio");
         }
+        if (dto.getType() == null) {
+            throw new IllegalArgumentException("Debe indicar el tipo de mueble");
+        }
         if (dto.getCarpenterId() == null) {
             throw new IllegalArgumentException("Debe indicar el ID del carpintero que crea el mueble");
         }
@@ -139,6 +142,7 @@ public class FurnitureService {
         if (dto.getDocumentUrl() != null) furniture.setDocumentURL(dto.getDocumentUrl());
         if (dto.getEndDate() != null) furniture.setEndDate(dto.getEndDate());
         if (dto.getStatus() != null) furniture.setStatus(dto.getStatus());
+        if (dto.getType() != null) furniture.setType(dto.getType());
 
         // --- ACTUALIZAR CARPENTER ---
         if (dto.getCarpenterId() != null) {
