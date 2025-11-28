@@ -2,13 +2,17 @@ package com.blashape.backend_blashape.services;
 
 import com.blashape.backend_blashape.DTOs.CuttingDTO;
 import com.blashape.backend_blashape.DTOs.PieceDTO;
+import com.blashape.backend_blashape.config.JwtUtil;
+import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Cutting;
 import com.blashape.backend_blashape.entitys.Furniture;
 import com.blashape.backend_blashape.entitys.Piece;
 import com.blashape.backend_blashape.mapper.CuttingMapper;
 import com.blashape.backend_blashape.mapper.PieceMapper;
+import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.CuttingRepository;
 import com.blashape.backend_blashape.repositories.FurnitureRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,8 @@ public class CuttingService {
     private final CuttingRepository cuttingRepository;
     private final FurnitureRepository furnitureRepository;
     private final CuttingMapper cuttingMapper;
+    private final CarpenterRepository carpenterRepository;
+    private final JwtUtil jwtUtil;
     private final PieceMapper pieceMapper;
 
     @Transactional
@@ -61,6 +67,29 @@ public class CuttingService {
 
         return dto;
     }
+
+    public List<CuttingDTO> getCuttingsByToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token no proporcionado");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Token inválido o expirado");
+        }
+
+        Carpenter carpenter = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado para el token"));
+
+        List<Cutting> cuttings = cuttingRepository.findByCarpenterId(
+                carpenter.getCarpenterId()
+        );
+
+        return cuttings.stream()
+                .map(cuttingMapper::toDTO)
+                .toList();
+    }
+
 
     @Transactional
     public CuttingDTO updateCutting(Long cuttingId, CuttingDTO dto) {

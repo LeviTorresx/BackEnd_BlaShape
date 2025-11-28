@@ -124,6 +124,12 @@ public class CustomerService {
             customer.setEmail(dto.getEmail());
         }
 
+        if (dto.getCarpenterId() != null) {
+            Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
+                    .orElseThrow(() -> new RuntimeException("Carpintero no encontrado con ID " + dto.getCarpenterId()));
+            customer.setCarpenter(carpenter);
+        }
+
         Customer updated = customerRepository.save(customer);
         return customerMapper.toDTO(updated);
     }

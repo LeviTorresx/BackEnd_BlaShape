@@ -15,4 +15,7 @@ public interface FurnitureRepository extends JpaRepository<Furniture, Long> {
 
     @Query("SELECT f FROM Furniture f WHERE f.endDate BETWEEN :today AND :futureDate")
     List<Furniture> findByEndDateAndFutureDate(LocalDate today, LocalDate futureDate);
+
+    @Query("SELECT f FROM Furniture f WHERE f.carpenter.carpenterId = :carpenterId")
+    List<Furniture> findFurnitureByCarpenterId(Long carpenterId);
 }
