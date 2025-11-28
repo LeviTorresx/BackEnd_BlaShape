@@ -4,6 +4,7 @@ public enum FurnitureStatus {
     QUOTATION,
     PENDING,
     COMPLETED,
-    CANCELED
+    CANCELED,
+    INITIAL
 }
 

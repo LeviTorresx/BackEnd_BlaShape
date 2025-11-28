@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -80,17 +81,26 @@ public class FurnitureService {
         }
 
         // ==== CUTTING ====
-        if (furniture.getCutting() == null) {
-            Cutting c = new Cutting();
-            c.setFurniture(furniture);
-            c.setPieces(new ArrayList<>());
-            furniture.setCutting(c);
+        Cutting cutting = furniture.getCutting();
+
+        if (cutting == null) {
+            cutting = new Cutting();
+            cutting.setFurniture(furniture);
+            cutting.setPieces(new ArrayList<>());
+            furniture.setCutting(cutting);
         } else {
-            furniture.getCutting().setFurniture(furniture);
-            if (furniture.getCutting().getPieces() == null) {
-                furniture.getCutting().setPieces(new ArrayList<>());
+            cutting.setFurniture(furniture);
+            if (cutting.getPieces() == null) {
+                cutting.setPieces(new ArrayList<>());
             }
         }
+
+        // ==== ASOCIAR PIEZAS AL CUTTING ====
+        for (Piece piece : cutting.getPieces()) {
+            piece.setCutting(cutting);
+            piece.setPieceId(null);
+        }
+
 
         // ==== GUARDAR ====
         Furniture saved = furnitureRepository.save(furniture);
@@ -156,11 +166,10 @@ public class FurnitureService {
     @Transactional
     public FurnitureDTO updateFurniture(Long id, RequestFurniture request) {
 
-        // ====== BUSCAR EL MUEBLE ======
         Furniture furniture = furnitureRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Mueble no encontrado con ID: " + id));
 
-        // ====== VALIDACIONES ======
+        // Validaciones
         if (request.getName() == null || request.getName().isBlank()) {
             throw new IllegalArgumentException("El mueble debe tener nombre");
         }
@@ -168,37 +177,35 @@ public class FurnitureService {
             throw new IllegalArgumentException("El tipo de mueble es obligatorio");
         }
 
-        // ====== SUBIDA OPCIONAL DE ARCHIVOS ======
+        // Subida opcional de archivos
         String newImageInit = uploadImageIfPresent(request.getImageInit());
         String newImageEnd  = uploadImageIfPresent(request.getImageEnd());
         String newDocument  = uploadDocumentIfPresent(request.getDocument());
 
-        // ====== ACTUALIZAR CAMPOS SIMPLES ======
+        if (newImageInit != null && !newImageInit.isEmpty()) furniture.setImageInitURL(newImageInit);
+        if (newImageEnd  != null && !newImageEnd.isEmpty())  furniture.setImageEndURL(newImageEnd);
+        if (newDocument  != null && !newDocument.isEmpty())  furniture.setDocumentURL(newDocument);
+
+        // Actualizar campos simples
         furniture.setName(request.getName());
         furniture.setStatus(request.getStatus());
         furniture.setType(request.getType());
 
+        if (request.getCreationDate() != null && !request.getCreationDate().isBlank()) {
+            furniture.setCreationDate(LocalDate.parse(request.getCreationDate()));
+        }
         if (request.getEndDate() != null && !request.getEndDate().isBlank()) {
             furniture.setEndDate(LocalDate.parse(request.getEndDate()));
         }
 
-        if (request.getCreationDate() != null && !request.getCreationDate().isBlank()) {
-            furniture.setCreationDate(LocalDate.parse(request.getCreationDate()));
-        }
-
-        // Solo actualizar si se subió archivo nuevo
-        if (!newImageInit.isEmpty()) furniture.setImageInitURL(newImageInit);
-        if (!newImageEnd.isEmpty())  furniture.setImageEndURL(newImageEnd);
-        if (!newDocument.isEmpty())  furniture.setDocumentURL(newDocument);
-
-        // ====== ACTUALIZAR CARPENTER ======
+        // Actualizar Carpenter
         if (request.getCarpenterId() != null) {
             Carpenter carpenter = carpenterRepository.findById(request.getCarpenterId())
                     .orElseThrow(() -> new RuntimeException("Carpintero no encontrado"));
             furniture.setCarpenter(carpenter);
         }
 
-        // ====== ACTUALIZAR CUSTOMER ======
+        // Actualizar Customer
         if (request.getCustomerId() != null) {
             Customer customer = customerRepository.findById(request.getCustomerId())
                     .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
@@ -209,34 +216,37 @@ public class FurnitureService {
         if (request.getCutting() != null) {
 
             Cutting cutting = furniture.getCutting();
-
             if (cutting == null) {
                 cutting = new Cutting();
                 cutting.setFurniture(furniture);
                 furniture.setCutting(cutting);
+                cutting.setPieces(new ArrayList<>());
             }
 
             cutting.setMaterialName(request.getCutting().getMaterialName());
             cutting.setSheetQuantity(request.getCutting().getSheetQuantity());
 
-            // Limpiar piezas actuales
-            cutting.getPieces().clear();
+            // Limpiar y actualizar la lista existente en lugar de reemplazar
+            List<Piece> existingPieces = cutting.getPieces();
+            existingPieces.clear(); // elimina huérfanos correctamente
 
             if (request.getCutting().getPieces() != null) {
                 for (PieceDTO pieceDTO : request.getCutting().getPieces()) {
                     Piece piece = pieceMapper.toEntity(pieceDTO);
+                    piece.setPieceId(null); // eliminamos IDs viejos
                     piece.setCutting(cutting);
-                    cutting.getPieces().add(piece);
+                    existingPieces.add(piece); // agregamos a la misma lista
                 }
             }
         }
 
-        // ====== GUARDAR ======
-        Furniture saved = furnitureRepository.save(furniture);
 
-        // Mapstruct devuelve DTO listo para respuesta
+        Furniture saved = furnitureRepository.save(furniture);
         return furnitureMapper.toDTO(saved);
     }
+
+
+
 
 }
 

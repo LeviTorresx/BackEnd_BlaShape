@@ -14,15 +14,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api_BS/furniture")
 @RequiredArgsConstructor
 public class FurnitureController {
     private final FurnitureService furnitureService;
+    private final String mkey = "message";
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<FurnitureDTO> createFurniture(
+    public  ResponseEntity<Map<String, String>> createFurniture(
             @RequestParam("data") String data,
             @RequestPart(value = "imageInit")MultipartFile imageInit,
             @RequestPart(value = "imageEnd", required = false) MultipartFile imageEnd,
@@ -34,7 +36,9 @@ public class FurnitureController {
         requestFurniture.setImageEnd(imageEnd);
         requestFurniture.setDocument(document);
 
-        return ResponseEntity.ok(furnitureService.createFurniture(requestFurniture));
+        FurnitureDTO dto = furnitureService.createFurniture(requestFurniture);
+
+        return ResponseEntity.ok(Map.of(mkey, "Mueble "+dto.getName()+" creado exitosamente"));
     }
 
     @GetMapping("/by-carpenter/{carpenterId}")
@@ -55,7 +59,7 @@ public class FurnitureController {
     }
 
     @PutMapping(value = "/edit/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<FurnitureDTO> updateFurniture(
+    public ResponseEntity<Map<String, String>> updateFurniture(
             @PathVariable Long id,
             @RequestParam("data") String data,
             @RequestPart(value = "imageInit", required = false) MultipartFile imageInit,
@@ -67,6 +71,9 @@ public class FurnitureController {
         requestFurniture.setImageInit(imageInit);
         requestFurniture.setImageEnd(imageEnd);
         requestFurniture.setDocument(document);
-        return ResponseEntity.ok(furnitureService.updateFurniture(id, requestFurniture));
+
+        FurnitureDTO dto = furnitureService.updateFurniture(id, requestFurniture);
+
+        return ResponseEntity.ok(Map.of(mkey, "Mueble "+dto.getName()+" actualizado exitosamente"));
     }
 }
