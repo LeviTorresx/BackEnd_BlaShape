@@ -33,6 +33,9 @@ public class Furniture {
     @Enumerated(EnumType.STRING)
     private FurnitureStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private FurnitureType type;
+
     @ManyToOne
     @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
     @JsonBackReference(value = "carpenter-furniture")
