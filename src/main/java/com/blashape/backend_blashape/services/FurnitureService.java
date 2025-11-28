@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class FurnitureService {
     private final JwtUtil jwtUtil;
     private final CustomerRepository customerRepository;
     private final PieceMapper pieceMapper;
-    private final FileStorageService fileStorageService;
+    private final CloudinaryService cloudinaryService;
     private static final String FURNITURE_IMAGE_DIR = "furniture/images";
     private static final String FURNITURE_DOCUMENT_DIR = "furniture/docs";
 
@@ -59,26 +60,14 @@ public class FurnitureService {
             throw new IllegalArgumentException("Debe indicar el ID del carpintero que crea el mueble");
         }
 
-        // Guardar archivos
-        String imageInitUrl = fileStorageService.saveFile(imageInit, FURNITURE_IMAGE_DIR);
+        try{
+            if(imageInit != null && !imageInit.isEmpty()){
+                Map uploadResult = cloudinaryService.uploadFile(imageInit);
 
-        String imageEndUrl = null;
-        if (imageEnd != null && !imageEnd.isEmpty()) {
-            imageEndUrl = fileStorageService.saveFile(imageEnd, FURNITURE_IMAGE_DIR);
-        }
-
-        String documentUrl = null;
-        if (document != null && !document.isEmpty()) {
-            // CORREGIDO
-            documentUrl = fileStorageService.saveFile(document, FURNITURE_DOCUMENT_DIR);
-        }
+            }
+        }catch(Exception e){}
 
         FurnitureDTO dto = furnitureMapper.toDto(requestFurniture);
-
-        // Asignar URLs al DTO
-        dto.setImageInitUrl(imageInitUrl);
-        dto.setImageEndUrl(imageEndUrl);
-        dto.setDocumentUrl(documentUrl);
 
         // Mapear DTO → Entity
         Furniture furniture = furnitureMapper.toEntity(dto);
