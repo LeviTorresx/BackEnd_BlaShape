@@ -16,9 +16,9 @@ import java.util.List;
 public class FurnitureDTO {
     private Long furnitureId;
     private String name;
-    private String documentUrl;
-    private String imageInitUrl;
-    private String imageEndUrl;
+    private String documentURL;
+    private String imageInitURL;
+    private String imageEndURL;
     private LocalDate creationDate;
     private LocalDate endDate;
     private FurnitureStatus status;

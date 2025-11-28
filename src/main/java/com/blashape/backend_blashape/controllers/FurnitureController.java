@@ -30,8 +30,11 @@ public class FurnitureController {
 
         ObjectMapper mapper = new ObjectMapper();
         RequestFurniture requestFurniture = mapper.readValue(data, RequestFurniture.class);
+        requestFurniture.setImageInit(imageInit);
+        requestFurniture.setImageEnd(imageEnd);
+        requestFurniture.setDocument(imageEnd);
 
-        return ResponseEntity.ok(furnitureService.createFurniture(requestFurniture, imageInit, imageEnd, document));
+        return ResponseEntity.ok(furnitureService.createFurniture(requestFurniture));
     }
 
     @GetMapping("/by-carpenter/{carpenterId}")

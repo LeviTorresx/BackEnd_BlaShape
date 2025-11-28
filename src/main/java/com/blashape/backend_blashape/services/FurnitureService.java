@@ -35,61 +35,55 @@ public class FurnitureService {
     private static final String FURNITURE_IMAGE_DIR = "furniture/images";
     private static final String FURNITURE_DOCUMENT_DIR = "furniture/docs";
 
-    public FurnitureDTO createFurniture(RequestFurniture requestFurniture,
-                                        MultipartFile imageInit,
-                                        MultipartFile imageEnd,
-                                        MultipartFile document) {
+    public FurnitureDTO createFurniture(RequestFurniture request) {
 
-        // Validaciones
-        if (requestFurniture.getName() == null || requestFurniture.getName().isBlank()) {
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new IllegalArgumentException("El nombre del mueble es obligatorio");
         }
-        if (imageInit == null || imageInit.isEmpty()) {
-            throw new IllegalArgumentException("La imagen inicial del mueble es obligatoria");
-        }
-        if (requestFurniture.getCreationDate() == null) {
+        if (request.getCreationDate() == null) {
             throw new IllegalArgumentException("La fecha de creación es obligatoria");
         }
-        if (requestFurniture.getStatus() == null) {
+        if (request.getStatus() == null) {
             throw new IllegalArgumentException("El estado del mueble es obligatorio");
         }
-        if (requestFurniture.getType() == null) {
+        if (request.getType() == null) {
             throw new IllegalArgumentException("Debe indicar el tipo de mueble");
         }
-        if (requestFurniture.getCarpenterId() == null) {
-            throw new IllegalArgumentException("Debe indicar el ID del carpintero que crea el mueble");
+        if (request.getCarpenterId() == null) {
+            throw new IllegalArgumentException("Debe indicar el ID del carpintero");
         }
 
-        try{
-            if(imageInit != null && !imageInit.isEmpty()){
-                Map uploadResult = cloudinaryService.uploadFile(imageInit);
+        String imageInitUrl = uploadIfPresent(request.getImageInit(), "imagen inicial");
+        String imageEndUrl = uploadIfPresent(request.getImageEnd(), "imagen final");
+        String documentUrl = uploadIfPresent(request.getDocument(), "documento");
 
-            }
-        }catch(Exception e){}
+        // ==== MAPEO Request → DTO ====
+        FurnitureDTO dto = furnitureMapper.toDTO(request);
+        dto.setImageInitURL(imageInitUrl);
+        dto.setImageEndURL(imageEndUrl);
+        dto.setDocumentURL(documentUrl);
 
-        FurnitureDTO dto = furnitureMapper.toDto(requestFurniture);
-
-        // Mapear DTO → Entity
+        // ==== MAPEO DTO → ENTITY ====
         Furniture furniture = furnitureMapper.toEntity(dto);
 
-        // Asignar carpenter
+        // Carpintero obligatorio
         Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
         furniture.setCarpenter(carpenter);
 
-        // Asignar customer (opcional)
+        // Cliente opcional
         if (dto.getCustomerId() != null) {
             Customer customer = customerRepository.findById(dto.getCustomerId())
                     .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
             furniture.setCustomer(customer);
         }
 
-        // Cutting
+        // ==== CUTTING ====
         if (furniture.getCutting() == null) {
-            Cutting emptyCutting = new Cutting();
-            emptyCutting.setFurniture(furniture);
-            emptyCutting.setPieces(new ArrayList<>());
-            furniture.setCutting(emptyCutting);
+            Cutting c = new Cutting();
+            c.setFurniture(furniture);
+            c.setPieces(new ArrayList<>());
+            furniture.setCutting(c);
         } else {
             furniture.getCutting().setFurniture(furniture);
             if (furniture.getCutting().getPieces() == null) {
@@ -97,11 +91,27 @@ public class FurnitureService {
             }
         }
 
-        // Guardar
+        // ==== GUARDAR ====
         Furniture saved = furnitureRepository.save(furniture);
 
         return furnitureMapper.toDTO(saved);
     }
+
+    /**
+     * Sube archivo opcionalmente; si está vacío, devuelve string vacío.
+     * Si falla lanza excepción con mensaje claro.
+     */
+    private String uploadIfPresent(MultipartFile file, String nombreCampo) {
+        if (file == null || file.isEmpty()) return "";
+
+        try {
+            Map result = cloudinaryService.uploadFile(file);
+            return result.get("secure_url").toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir " + nombreCampo + ": " + e.getMessage());
+        }
+    }
+
 
 
 
@@ -153,9 +163,9 @@ public class FurnitureService {
         }
 
         furniture.setName(dto.getName());
-        if (dto.getImageInitUrl() != null) furniture.setImageInitURL(dto.getImageInitUrl());
-        if (dto.getImageEndUrl() != null) furniture.setImageEndURL(dto.getImageEndUrl());
-        if (dto.getDocumentUrl() != null) furniture.setDocumentURL(dto.getDocumentUrl());
+        if (dto.getImageInitURL() != null) furniture.setImageInitURL(dto.getImageInitURL());
+        if (dto.getImageEndURL() != null) furniture.setImageEndURL(dto.getImageEndURL());
+        if (dto.getDocumentURL() != null) furniture.setDocumentURL(dto.getDocumentURL());
         if (dto.getEndDate() != null) furniture.setEndDate(dto.getEndDate());
         if (dto.getStatus() != null) furniture.setStatus(dto.getStatus());
         if (dto.getType() != null) furniture.setType(dto.getType());

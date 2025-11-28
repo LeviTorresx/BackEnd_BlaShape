@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -14,9 +15,9 @@ import lombok.Setter;
 public class RequestFurniture {
     private Long furnitureId;
     private String name;
-    private String documentUrl;
-    private String imageInitUrl;
-    private String imageEndUrl;
+    private MultipartFile document;
+    private MultipartFile imageInit;
+    private MultipartFile imageEnd;
     private String creationDate;
     private String endDate;
     private FurnitureStatus status;
