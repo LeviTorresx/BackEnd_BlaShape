@@ -2,11 +2,16 @@ package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.AlertDTO;
 import com.blashape.backend_blashape.DTOs.FurnitureDTO;
+import com.blashape.backend_blashape.DTOs.RequestFurniture;
 import com.blashape.backend_blashape.services.FurnitureService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,9 +21,17 @@ import java.util.List;
 public class FurnitureController {
     private final FurnitureService furnitureService;
 
-    @PostMapping("/create")
-    public ResponseEntity<FurnitureDTO> createFurniture(@RequestBody FurnitureDTO dto) {
-        return ResponseEntity.ok(furnitureService.createFurniture(dto));
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FurnitureDTO> createFurniture(
+            @RequestParam("data") String data,
+            @RequestPart(value = "imageInit")MultipartFile imageInit,
+            @RequestPart(value = "imageEnd", required = false) MultipartFile imageEnd,
+            @RequestPart (value ="document", required = false) MultipartFile document) throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        RequestFurniture requestFurniture = mapper.readValue(data, RequestFurniture.class);
+
+        return ResponseEntity.ok(furnitureService.createFurniture(requestFurniture, imageInit, imageEnd, document));
     }
 
     @GetMapping("/by-carpenter/{carpenterId}")
