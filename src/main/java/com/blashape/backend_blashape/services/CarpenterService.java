@@ -55,7 +55,7 @@ public class CarpenterService {
 
         Carpenter updated = carpenterRepository.save(existing);
 
-        return  carpenterMapper.toDTO(updated);
+        return carpenterMapper.toDTO(updated);
     }
 
     public void deleteCarpenter(Long id) {
