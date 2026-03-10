@@ -1,6 +1,5 @@
 package com.blashape.backend_blashape.controllers;
 
-import com.blashape.backend_blashape.DTOs.AlertDTO;
 import com.blashape.backend_blashape.DTOs.FurnitureDTO;
 import com.blashape.backend_blashape.DTOs.RequestFurniture;
 import com.blashape.backend_blashape.services.FurnitureService;
