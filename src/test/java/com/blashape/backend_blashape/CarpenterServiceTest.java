@@ -13,6 +13,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,6 +25,7 @@ import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.services.CarpenterService;
 
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 
 @ActiveProfiles("test")
@@ -35,7 +37,7 @@ class CarpenterServiceTest {
     @Mock
     private CarpenterMapper carpenterMapper;
 
-    @Mock
+    @InjectMocks
     private CarpenterService carpenterService;
 
     private Carpenter carpenter;
@@ -150,7 +152,7 @@ class CarpenterServiceTest {
          when(carpenterRepository.existsByEmail("existente@gmail.com")).thenReturn(true);
 
         //Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> carpenterService.updateCarpenter(1L, carpenterDTO));
+        assertThrows(EntityExistsException.class, () -> carpenterService.updateCarpenter(1L, carpenterDTO));
      }
 
      @Test
