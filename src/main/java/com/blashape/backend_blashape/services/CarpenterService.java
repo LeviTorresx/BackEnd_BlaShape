@@ -3,6 +3,8 @@ import com.blashape.backend_blashape.DTOs.CarpenterDTO;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
+
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,6 @@ public class CarpenterService {
                 .toList();
     }
 
-
     public CarpenterDTO updateCarpenter(Long id, CarpenterDTO dto) {
         Carpenter existing = carpenterRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
@@ -45,7 +46,7 @@ public class CarpenterService {
                 throw new IllegalArgumentException("El formato del correo es inválido");
             }
             if (!dto.getEmail().equals(existing.getEmail()) && carpenterRepository.existsByEmail(dto.getEmail())) {
-                throw new IllegalArgumentException("El correo ya está en uso");
+                throw new EntityExistsException("El correo ya está en uso");
             }
             existing.setEmail(dto.getEmail());
         }
@@ -55,7 +56,7 @@ public class CarpenterService {
 
         Carpenter updated = carpenterRepository.save(existing);
 
-        return  carpenterMapper.toDTO(updated);
+        return carpenterMapper.toDTO(updated);
     }
 
     public void deleteCarpenter(Long id) {
@@ -64,5 +65,4 @@ public class CarpenterService {
         }
         carpenterRepository.deleteById(id);
     }
-
 }

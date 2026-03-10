@@ -1,6 +1,5 @@
 package com.blashape.backend_blashape.services;
 
-import com.blashape.backend_blashape.DTOs.AlertDTO;
 import com.blashape.backend_blashape.DTOs.FurnitureDTO;
 import com.blashape.backend_blashape.DTOs.PieceDTO;
 import com.blashape.backend_blashape.DTOs.RequestFurniture;
@@ -20,13 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class FurnitureService {
-
     private final FurnitureRepository furnitureRepository;
     private final FurnitureMapper furnitureMapper;
     private final CarpenterRepository carpenterRepository;
@@ -34,8 +30,6 @@ public class FurnitureService {
     private final CustomerRepository customerRepository;
     private final PieceMapper pieceMapper;
     private final CloudinaryService cloudinaryService;
-    private static final String FURNITURE_IMAGE_DIR = "furniture/images";
-    private static final String FURNITURE_DOCUMENT_DIR = "furniture/docs";
 
     public FurnitureDTO createFurniture(RequestFurniture request) {
 
@@ -101,7 +95,6 @@ public class FurnitureService {
             piece.setPieceId(null);
         }
 
-
         // ==== GUARDAR ====
         Furniture saved = furnitureRepository.save(furniture);
 
@@ -126,8 +119,6 @@ public class FurnitureService {
         }
     }
 
-
-
     public List<FurnitureDTO> getFurnituresByCarpenterId(Long carpenterId) {
 
         Carpenter carpenter = carpenterRepository.findById(carpenterId)
@@ -146,6 +137,7 @@ public class FurnitureService {
         }
 
         String email = jwtUtil.extractEmail(token);
+        
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Token inválido o expirado");
         }
@@ -162,10 +154,8 @@ public class FurnitureService {
                 .toList();
     }
 
-
     @Transactional
     public FurnitureDTO updateFurniture(Long id, RequestFurniture request) {
-
         Furniture furniture = furnitureRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Mueble no encontrado con ID: " + id));
 
@@ -178,13 +168,7 @@ public class FurnitureService {
         }
 
         // Subida opcional de archivos
-        String newImageInit = uploadImageIfPresent(request.getImageInit());
-        String newImageEnd  = uploadImageIfPresent(request.getImageEnd());
-        String newDocument  = uploadDocumentIfPresent(request.getDocument());
-
-        if (newImageInit != null && !newImageInit.isEmpty()) furniture.setImageInitURL(newImageInit);
-        if (newImageEnd  != null && !newImageEnd.isEmpty())  furniture.setImageEndURL(newImageEnd);
-        if (newDocument  != null && !newDocument.isEmpty())  furniture.setDocumentURL(newDocument);
+        optionalFileUploadForUpdate(furniture, request);
 
         // Actualizar campos simples
         furniture.setName(request.getName());
@@ -215,16 +199,7 @@ public class FurnitureService {
         // ====== ACTUALIZAR CUTTING ======
         if (request.getCutting() != null) {
 
-            Cutting cutting = furniture.getCutting();
-            if (cutting == null) {
-                cutting = new Cutting();
-                cutting.setFurniture(furniture);
-                furniture.setCutting(cutting);
-                cutting.setPieces(new ArrayList<>());
-            }
-
-            cutting.setMaterialName(request.getCutting().getMaterialName());
-            cutting.setSheetQuantity(request.getCutting().getSheetQuantity());
+            Cutting cutting = makeCuttingForUpdate(furniture, request);
 
             // Limpiar y actualizar la lista existente en lugar de reemplazar
             List<Piece> existingPieces = cutting.getPieces();
@@ -240,13 +215,34 @@ public class FurnitureService {
             }
         }
 
-
         Furniture saved = furnitureRepository.save(furniture);
         return furnitureMapper.toDTO(saved);
     }
 
+    private Cutting makeCuttingForUpdate(Furniture furniture, RequestFurniture request) {
+        Cutting cutting = furniture.getCutting();
 
+        if (cutting == null) {
+                cutting = new Cutting();
+                cutting.setFurniture(furniture);
+                furniture.setCutting(cutting);
+                cutting.setPieces(new ArrayList<>());
+            }
 
+        cutting.setMaterialName(request.getCutting().getMaterialName());
+        cutting.setSheetQuantity(request.getCutting().getSheetQuantity());
 
+        return cutting;
+    }
+
+    private void optionalFileUploadForUpdate(Furniture furniture, RequestFurniture request) {
+        String newImageInit = uploadImageIfPresent(request.getImageInit());
+        String newImageEnd  = uploadImageIfPresent(request.getImageEnd());
+        String newDocument  = uploadDocumentIfPresent(request.getDocument());
+
+        if (newImageInit != null && !newImageInit.isEmpty()) furniture.setImageInitURL(newImageInit);
+        if (newImageEnd  != null && !newImageEnd.isEmpty())  furniture.setImageEndURL(newImageEnd);
+        if (newDocument  != null && !newDocument.isEmpty())  furniture.setDocumentURL(newDocument);
+    }
 }
 
