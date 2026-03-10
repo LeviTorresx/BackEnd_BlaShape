@@ -1,7 +1,11 @@
 package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.CuttingDTO;
+import com.blashape.backend_blashape.DTOs.SvgRequest;
+import com.blashape.backend_blashape.DTOs.SvgResponse;
 import com.blashape.backend_blashape.services.CuttingService;
+import com.blashape.backend_blashape.services.GuillotineAlgorithm;
+import com.blashape.backend_blashape.services.SvgPreviewGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,30 +19,34 @@ import java.util.List;
 public class CuttingController {
     private final CuttingService cuttingService;
 
-    @PostMapping("/create")
-    public ResponseEntity<CuttingDTO> createCutting(@RequestBody CuttingDTO dto) {
-        return ResponseEntity.ok(cuttingService.createCutting(dto));
+    @PostMapping("/preview")
+    public SvgResponse generatePreview(@RequestBody SvgRequest request) {
+        return cuttingService.createCuttingPreview(request);
     }
 
-    @GetMapping("/furniture/{furnitureId}")
-    public ResponseEntity<CuttingDTO> getByFurniture(@PathVariable Long furnitureId) {
-        return ResponseEntity.ok(cuttingService.getByFurnitureId(furnitureId));
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<List<CuttingDTO>> getAllByCarpenter(
-            @CookieValue(name = "jwt", required = false) String token
+    @GetMapping(value = "/preview/{sheet}", produces = "image/svg+xml")
+    public String previewSheet(
+            @PathVariable int sheet,
+            @RequestBody SvgRequest request
     ) {
-        if (token == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
-        List<CuttingDTO> cuttings = cuttingService.getCuttingsByToken(token);
-        return ResponseEntity.ok(cuttings);
-    }
+        GuillotineAlgorithm.PackingResult result = GuillotineAlgorithm.pack(
+                request.getContainerWidth(),
+                request.getContainerHeight(),
+                request.getItems(),
+                request.getKerf()
+        );
 
-    @PutMapping("/edit/{cuttingId}")
-    public ResponseEntity<CuttingDTO> updateCutting(@PathVariable Long cuttingId, @RequestBody CuttingDTO dto) {
-        return ResponseEntity.ok(cuttingService.updateCutting(cuttingId, dto));
+        List<String> svgs = SvgPreviewGenerator.generateAll(
+                result.sheets(),
+                result.wastePercents(),
+                request.getContainerWidth(),
+                request.getContainerHeight(),
+                request.getKerf(),
+                request.getPreviewWidth(),
+                request.getPreviewHeight()
+        );
+
+        return svgs.get(sheet);
     }
 }
