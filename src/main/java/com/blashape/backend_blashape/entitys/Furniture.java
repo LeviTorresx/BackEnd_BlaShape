@@ -33,6 +33,9 @@ public class Furniture {
     @Enumerated(EnumType.STRING)
     private FurnitureStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private FurnitureType type;
+
     @ManyToOne
     @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
     @JsonBackReference(value = "carpenter-furniture")
@@ -43,8 +46,16 @@ public class Furniture {
     @JsonBackReference(value = "customer-furniture")
     private Customer customer;
 
-    //@OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
-    //@JsonManagedReference
-    //private Cutting cutting;
+    @OneToOne(mappedBy = "furniture", cascade = CascadeType.ALL)
+    @JsonManagedReference("furniture-cutting")
+    private Cutting cutting;
 
+    public void setCutting(Cutting cutting) {
+        this.cutting = cutting;
+
+        // Sincroniza el otro lado
+        if (cutting != null && cutting.getFurniture() != this) {
+            cutting.setFurniture(this);
+        }
+    }
 }

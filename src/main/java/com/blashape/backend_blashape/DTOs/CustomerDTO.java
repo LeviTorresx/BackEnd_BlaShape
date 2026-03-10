@@ -17,7 +17,6 @@ public class CustomerDTO {
     private String  phone;
     private String email;
     private String role;
-
+    private Long carpenterId;
     private List<Long> furnitureListIds;
-
 }

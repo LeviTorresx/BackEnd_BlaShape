@@ -35,4 +35,8 @@ public class Carpenter extends User {
     @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
     @JsonManagedReference(value = "carpenter-alert")
     private List<Alert> alertList;
+
+    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
+    @JsonManagedReference(value = "carpenter-customer")
+    private List<Customer> customers;
 }

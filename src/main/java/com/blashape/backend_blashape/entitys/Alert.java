@@ -28,6 +28,9 @@ public class Alert {
     private LocalTime time;
 
     @Enumerated(EnumType.STRING)
+    private AlertState state = AlertState.ACTIVE;
+
+    @Enumerated(EnumType.STRING)
     private Severity severity;
 
     @ManyToOne

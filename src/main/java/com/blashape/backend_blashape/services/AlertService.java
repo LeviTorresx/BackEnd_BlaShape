@@ -2,10 +2,7 @@ package com.blashape.backend_blashape.services;
 
 
 import com.blashape.backend_blashape.DTOs.AlertDTO;
-import com.blashape.backend_blashape.entitys.Alert;
-import com.blashape.backend_blashape.entitys.Carpenter;
-import com.blashape.backend_blashape.entitys.Furniture;
-import com.blashape.backend_blashape.entitys.Severity;
+import com.blashape.backend_blashape.entitys.*;
 import com.blashape.backend_blashape.mapper.AlertMapper;
 import com.blashape.backend_blashape.repositories.AlertRepository;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
@@ -73,7 +70,7 @@ public class AlertService {
         Carpenter carpenter = carpenterRepository.findById(carpenterId)
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + carpenterId));
 
-        List<Alert> alerts = alertRepository.findByCarpenter(carpenter);
+        List<Alert> alerts = alertRepository.findByCarpenterAndState(carpenter, AlertState.ACTIVE);
 
         return alerts.stream()
                 .map(alertMapper::toDTO)
@@ -151,6 +148,19 @@ public class AlertService {
                 alert.setCarpenter(furniture.getCarpenter());
                 alertRepository.save(alert);
             }
+
+            if (daysLeft == 0) {
+                List<Alert> alertsOfFurniture = alertRepository.findByMessageContaining(
+                        furniture.getName()
+                );
+
+                for (Alert a : alertsOfFurniture) {
+                    a.setState(AlertState.INACTIVE);
+                }
+
+                alertRepository.saveAll(alertsOfFurniture);
+            }
+
         }
     }
 }
