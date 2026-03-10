@@ -1,7 +1,6 @@
 package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.CuttingDTO;
-import com.blashape.backend_blashape.DTOs.FurnitureDTO;
 import com.blashape.backend_blashape.services.CuttingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

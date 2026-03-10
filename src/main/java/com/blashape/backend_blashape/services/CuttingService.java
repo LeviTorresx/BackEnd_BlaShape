@@ -1,7 +1,6 @@
 package com.blashape.backend_blashape.services;
 
 import com.blashape.backend_blashape.DTOs.CuttingDTO;
-import com.blashape.backend_blashape.DTOs.PieceDTO;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Cutting;

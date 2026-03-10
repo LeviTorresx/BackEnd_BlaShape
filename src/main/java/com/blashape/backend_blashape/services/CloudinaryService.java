@@ -24,7 +24,7 @@ public class CloudinaryService {
             return null;
         }
 
-        Map uploadResult = cloudinary.uploader().upload(
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "resource_type", "image",
@@ -43,7 +43,7 @@ public class CloudinaryService {
             return null;
         }
 
-        Map uploadResult = cloudinary.uploader().upload(
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "resource_type", "auto",        // detecta PDF, DOCX, etc
