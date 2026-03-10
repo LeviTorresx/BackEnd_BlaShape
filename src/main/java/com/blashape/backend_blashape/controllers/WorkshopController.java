@@ -13,7 +13,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api_BS/workshop")
 @RequiredArgsConstructor
-public class WorkshopController {
+public class    WorkshopController {
 
     private final WorkshopService workshopService;
     private final String mKey = "message";
