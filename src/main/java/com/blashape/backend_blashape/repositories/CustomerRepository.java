@@ -13,4 +13,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query("SELECT c FROM Customer c WHERE c.carpenter.carpenterId = :carpenterId AND c.deleted = false")
     List<Customer> findActiveCustomersByCarpenterId(@Param("carpenterId") Long carpenterId);
 
+    boolean existsByDni(String dni);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
 }

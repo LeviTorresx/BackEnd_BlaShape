@@ -53,6 +53,18 @@ public class CustomerService {
             throw new IllegalArgumentException("El cliente debe tener un carpintero asociado");
         }
 
+        if(customerRepository.existsByDni(dto.getDni())){
+            throw new IllegalArgumentException("Ya existe un cliente con esa cédula");
+        }
+
+        if(customerRepository.existsByEmail(dto.getEmail())){
+            throw new IllegalArgumentException("Ya existe un cliente con ese correo");
+        }
+
+        if(customerRepository.existsByPhone(dto.getPhone())){
+            throw new IllegalArgumentException("Ya existe un cliente con ese teléfono");
+        }
+
         Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
 
