@@ -118,6 +118,31 @@ class WorkshopServiceTest {
                 () -> workshopService.createWorkshop(workshopDTO));
     }
 
+    // CREATE DUPLICATE WORKSHOP
+    @Test
+    void createDuplicateWorkshopShouldFail() {
+
+        workshopDTO.setNit("123456789");
+
+        when(workshopRepository.existsByNit("123456789"))
+                .thenReturn(false) // primera creación
+                .thenReturn(true); // segunda creación
+
+        when(carpenterRepository.findById(1L)).thenReturn(Optional.of(carpenter));
+        when(workshopMapper.toEntity(workshopDTO)).thenReturn(workshop);
+        when(workshopRepository.save(any())).thenReturn(workshop);
+        when(workshopMapper.toDto(workshop)).thenReturn(workshopDTO);
+
+        // primera creación
+        workshopService.createWorkshop(workshopDTO);
+
+        // segunda creación debe fallar
+        assertThrows(IllegalArgumentException.class,
+                () -> workshopService.createWorkshop(workshopDTO));
+
+        verify(workshopRepository, times(1)).save(any());
+    }
+
     // CARPENTER NOT FOUND
     @Test
     void createWorkshopCarpenterNotFound(){

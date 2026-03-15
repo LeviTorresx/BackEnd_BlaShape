@@ -12,7 +12,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name ="workshop")
+@Table(name ="workshop",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"nit"})
+        })
 public class Workshop {
 
     @Id
@@ -20,7 +23,7 @@ public class Workshop {
     private Long workshopId;
     private String address;
 
-    @Column(nullable = true)
+    @Column(nullable = false, unique = true)
     private String nit;
 
     private String phone;

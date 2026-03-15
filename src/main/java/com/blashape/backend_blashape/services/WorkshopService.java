@@ -33,6 +33,9 @@ public class WorkshopService {
         if (dto.getCarpenterId() == null) {
             throw new IllegalArgumentException("Debe indicar el ID del carpintero que crea el taller");
         }
+        if (workshopRepository.existsByNit(dto.getNit())) {
+            throw new IllegalArgumentException("Ya existe un taller con ese NIT");
+        }
 
         Workshop workshop = workshopMapper.toEntity(dto);
 
@@ -84,6 +87,10 @@ public class WorkshopService {
             workshop.setPhone(dto.getPhone());
         }
         if (dto.getNit() != null && !dto.getNit().isBlank()) {
+            if(workshopRepository.existsByNit(dto.getNit()) && !dto.getNit().equals(workshop.getNit())) {
+                throw new IllegalArgumentException("Ya existe un taller con ese NIT");
+            }
+
             workshop.setNit(dto.getNit());
         }
 
