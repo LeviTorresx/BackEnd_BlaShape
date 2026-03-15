@@ -49,7 +49,6 @@ public class AuthController {
         response.addCookie(cookie);
 
         return ResponseEntity.ok(Map.of(mKey, "Inicio de sesión exitoso"));
-
     }
 
     @GetMapping("/me")
@@ -100,20 +99,58 @@ public class AuthController {
         return ResponseEntity.status(401).body("Código incorrecto.");
     }
 
+    @PostMapping("/verify-reset-code")
+    public ResponseEntity<String> verifyResetCode(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+
+        String email = body.get("email");
+        String code = body.get("code");
+
+        if (twoFactorAuthService.verifyCode(email, code)) {
+
+            request.getSession().setAttribute("RESET_EMAIL", email);
+
+            return ResponseEntity.ok("Código verificado correctamente");
+        }
+
+        return ResponseEntity.status(401).body("Código incorrecto o expirado.");
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(
             HttpServletRequest request,
             @RequestParam String newPassword) {
 
-        String token = jwtUtil.extractTokenFromCookie(request);
-        String email = jwtUtil.extractEmail(token);
+        String email = (String) request.getSession().getAttribute("RESET_EMAIL");
 
-        if (!twoFactorAuthService.isVerified(email)) {
+        if (email == null) {
             return ResponseEntity.status(403).body("No tienes verificación válida.");
         }
 
         authService.updatePassword(email, newPassword);
+        twoFactorAuthService.clearVerification(email);
+
+        request.getSession().removeAttribute("RESET_EMAIL");
+
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> body) {
+
+        String email = body.get("email");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(mKey, "Debes proporcionar un correo válido"));
+        }
+
+        twoFactorAuthService.sendVerificationCode(email);
+
+        return ResponseEntity.ok(
+                Map.of(mKey, "Si el correo existe, se enviará un código de verificación.")
+        );
     }
 
     @PostMapping("/logout")
