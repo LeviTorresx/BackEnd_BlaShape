@@ -252,4 +252,31 @@ class CustomerServiceTest {
         assertThrows(EntityNotFoundException.class,
                 () -> customerService.deleteCustomer(1L));
     }
+
+    // CREATE DUPLICATE CUSTOMER
+    @Test
+    void createDuplicateCustomerShouldFail() {
+
+        when(customerRepository.existsByDni("123456"))
+                .thenReturn(false)   // primera llamada
+                .thenReturn(true);   // segunda llamada
+
+        when(customerRepository.existsByEmail("deibinson@email.com"))
+                .thenReturn(false);
+
+        when(customerRepository.existsByPhone("3000000000"))
+                .thenReturn(false);
+
+        when(carpenterRepository.findById(1L)).thenReturn(Optional.of(carpenter));
+        when(customerMapper.toEntity(customerDTO)).thenReturn(customer);
+        when(customerRepository.save(any())).thenReturn(customer);
+        when(customerMapper.toDTO(customer)).thenReturn(customerDTO);
+
+        // primera creación (debe funcionar)
+        customerService.createCustomer(customerDTO);
+
+        // segunda creación (debe fallar)
+        assertThrows(IllegalArgumentException.class,
+                () -> customerService.createCustomer(customerDTO));
+    }
 }

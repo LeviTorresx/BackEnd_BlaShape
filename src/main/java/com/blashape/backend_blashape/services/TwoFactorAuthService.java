@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.services;
 
 import org.springframework.stereotype.Service;
+
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -11,10 +12,13 @@ public class TwoFactorAuthService {
 
     private final EmailService emailService;
 
-    // Guarda temporalmente los códigos enviados
-    private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
+    // 15 minutos
+    private static final long EXPIRATION_TIME = 15 * 60 * 1000;
 
-    // Guarda qué usuarios ya pasaron la verificación
+    // reenvío permitido cada 30 segundos
+    private static final long RESEND_DELAY = 30 * 1000;
+
+    private final Map<String, VerificationCode> verificationCodes = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmails = ConcurrentHashMap.newKeySet();
 
     public TwoFactorAuthService(EmailService emailService) {
@@ -22,23 +26,55 @@ public class TwoFactorAuthService {
     }
 
     public void sendVerificationCode(String email) {
-        String code = String.valueOf(new Random().nextInt(900000) + 100000); // 6 dígitos
-        verificationCodes.put(email, code);
+
+        long now = System.currentTimeMillis();
+
+        VerificationCode existing = verificationCodes.get(email);
+
+        // Evitar reenvíos demasiado rápidos
+        if (existing != null && (now - existing.getCreatedAt()) < RESEND_DELAY) {
+            throw new RuntimeException("Debes esperar antes de solicitar otro código.");
+        }
+
+        String code = String.valueOf(new Random().nextInt(900000) + 100000);
+
+        long expiresAt = now + EXPIRATION_TIME;
+
+        VerificationCode verificationCode =
+                new VerificationCode(code, expiresAt, now);
+
+        verificationCodes.put(email, verificationCode);
 
         String subject = "Tu código de verificación";
-        String body = "Tu código es: " + code;
+        String body = "Tu código es: " + code +
+                "\n\nEste código expira en 15 minutos.";
 
         emailService.sendEmail(email, subject, body);
     }
 
     public boolean verifyCode(String email, String code) {
-        String storedCode = verificationCodes.get(email);
-        if (storedCode != null && storedCode.equals(code)) {
-            verifiedEmails.add(email); // ✅ marcamos como verificado
-            verificationCodes.remove(email); // eliminamos el código (opcional)
-            return true;
+
+        VerificationCode stored = verificationCodes.get(email);
+
+        if (stored == null) {
+            return false;
         }
-        return false;
+
+        // Si expiró, eliminarlo
+        if (stored.isExpired()) {
+            verificationCodes.remove(email);
+            return false;
+        }
+
+        if (!stored.getCode().equals(code)) {
+            return false;
+        }
+
+        // Código correcto
+        verifiedEmails.add(email);
+        verificationCodes.remove(email);
+
+        return true;
     }
 
     public boolean isVerified(String email) {
@@ -49,5 +85,3 @@ public class TwoFactorAuthService {
         verifiedEmails.remove(email);
     }
 }
-
-

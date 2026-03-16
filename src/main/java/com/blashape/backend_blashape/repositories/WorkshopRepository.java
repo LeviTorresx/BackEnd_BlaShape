@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface WorkshopRepository extends JpaRepository<Workshop, Long> {
+
+    boolean existsByNit(String nit);
 }

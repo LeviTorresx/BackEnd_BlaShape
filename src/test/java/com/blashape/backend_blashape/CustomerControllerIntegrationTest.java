@@ -137,4 +137,41 @@ class CustomerControllerIntegrationTest {
                         .value("Cliente eliminado correctamente"));
     }
 
+
+    // CREATE DUPLICATE CUSTOMER REQUEST
+    @Test
+    void createDuplicateCustomerRequestShouldFail() throws Exception {
+
+        CustomerDTO dto = new CustomerDTO();
+        dto.setName("Deibinson");
+
+        when(customerService.createCustomer(any()))
+                .thenReturn(dto) // primera petición
+                .thenThrow(new IllegalArgumentException("Ya existe un cliente con esa cédula")); // segunda
+
+        String json = """
+    {
+        "name":"Deibinson",
+        "lastName":"Perez",
+        "dni":"123456",
+        "phone":"3000000000",
+        "email":"mono@email.com",
+        "carpenterId":1
+    }
+    """;
+
+        // Primera petición -> OK
+        mockMvc.perform(post("/api_BS/customer/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+
+        // Segunda petición -> Debe fallar por duplicado
+        mockMvc.perform(post("/api_BS/customer/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Ya existe un cliente con esa cédula"));
+    }
 }

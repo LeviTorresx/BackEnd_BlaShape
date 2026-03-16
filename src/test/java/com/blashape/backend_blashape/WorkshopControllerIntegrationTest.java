@@ -1,35 +1,50 @@
 package com.blashape.backend_blashape;
 
+import com.blashape.backend_blashape.DTOs.WorkshopDTO;
+import com.blashape.backend_blashape.DTOs.WorkshopResponse;
+import com.blashape.backend_blashape.controllers.WorkshopController;
+import com.blashape.backend_blashape.controllers.GlobalExceptionHandler;
+import com.blashape.backend_blashape.services.WorkshopService;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+
+import static org.mockito.Mockito.*;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.blashape.backend_blashape.DTOs.WorkshopDTO;
-import com.blashape.backend_blashape.DTOs.WorkshopResponse;
-import com.blashape.backend_blashape.services.WorkshopService;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
 class WorkshopControllerIntegrationTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private WorkshopService workshopService;
+
+    @InjectMocks
+    private WorkshopController workshopController;
+
+    @BeforeEach
+    void setup() {
+
+        MockitoAnnotations.openMocks(this);
+
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(workshopController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
 
     // CREATE
     @Test
@@ -55,6 +70,42 @@ class WorkshopControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message")
                         .value("Taller Taller Central creado correctamente"));
+    }
+
+    // CREATE DUPLICATE WORKSHOP REQUEST
+    @Test
+    void createDuplicateWorkshopRequestShouldFail() throws Exception {
+
+        WorkshopDTO dto = new WorkshopDTO();
+        dto.setName("Taller Central");
+
+        when(workshopService.createWorkshop(any()))
+                .thenReturn(dto)
+                .thenThrow(new IllegalArgumentException("Ya existe un taller con ese NIT"));
+
+        String json = """
+        {
+            "name":"Taller Central",
+            "address":"Calle 123",
+            "phone":"3000000000",
+            "nit":"123456789",
+            "carpenterId":1
+        }
+        """;
+
+        mockMvc.perform(post("/api_BS/workshop/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api_BS/workshop/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Ya existe un taller con ese NIT"));
+
+        verify(workshopService, times(2)).createWorkshop(any());
     }
 
     // GET BY ID
@@ -91,11 +142,6 @@ class WorkshopControllerIntegrationTest {
 
         WorkshopDTO dto = new WorkshopDTO();
         dto.setName("Taller Actualizado");
-
-        WorkshopResponse response = new WorkshopResponse(
-                "Taller Taller Actualizado actualizado exitosamente",
-                dto
-        );
 
         when(workshopService.updateWorkshop(eq(1L), any())).thenReturn(dto);
 
