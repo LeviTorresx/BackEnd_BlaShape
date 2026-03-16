@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,6 +82,7 @@ public class CustomerService {
         }
 
         customer.setRole(UserRole.DEFAULT);
+        customer.setIsActive(true);
 
         Customer saved = customerRepository.save(customer);
 
