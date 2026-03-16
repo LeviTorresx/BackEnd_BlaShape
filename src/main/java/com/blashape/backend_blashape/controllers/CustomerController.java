@@ -47,11 +47,9 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.updateCustomer(id, dto));
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Map<String, String>> deleteCustomer (@PathVariable Long id){
+    @DeleteMapping("/delete")
+    public ResponseEntity<Map<String, String>> deleteCustomer (@RequestParam Long id){
         customerService.deleteCustomer(id);
         return ResponseEntity.ok(Map.of(mkey, "Cliente eliminado correctamente"));
     }
-
-
 }

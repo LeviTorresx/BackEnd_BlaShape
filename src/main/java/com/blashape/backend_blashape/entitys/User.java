@@ -1,5 +1,7 @@
 package com.blashape.backend_blashape.entitys;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -32,4 +34,9 @@ public abstract class User {
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean isActive;
+
+    private Instant deletedAt;
 }

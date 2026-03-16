@@ -3,6 +3,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -19,6 +21,8 @@ public class CarpenterDTO {
     private String password;
     private String phone;
     private String role;
+    private Boolean isActive;
+    private Instant deletedAt;
 
     private WorkshopDTO workshop;
     private List<Long> furnitureListIds;

@@ -215,5 +215,4 @@ public class AuthService {
 
         response.addCookie(cookie);
     }
-
 }
