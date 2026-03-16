@@ -1,6 +1,6 @@
 package com.blashape.backend_blashape.entitys;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
@@ -38,5 +38,5 @@ public abstract class User {
     @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     private Boolean isActive;
 
-    private LocalDateTime deletedAt;
+    private Instant deletedAt;
 }

@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -20,7 +20,7 @@ public class CustomerDTO {
     private String email;
     private String role;
     private Boolean isActive;
-    private LocalDateTime deletedAt;
+    private Instant deletedAt;
     private Long carpenterId;
     private List<Long> furnitureListIds;
 }

@@ -14,6 +14,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +151,7 @@ public class CustomerService {
                 .orElseThrow(() -> new EntityNotFoundException(CLIENTE_NO_ENCONTRADO + customerId));
 
         customer.setIsActive(false);
-        customer.setDeletedAt(LocalDateTime.now());
+        customer.setDeletedAt(Instant.now());
 
         customerRepository.save(customer);
     }
