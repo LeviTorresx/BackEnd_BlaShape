@@ -76,6 +76,7 @@ public class AuthService {
 
         carpenter.setWorkshop(null);
         carpenter.setRole(UserRole.CARPENTER);
+        carpenter.setIsActive(true);
 
         Carpenter saved = carpenterRepository.save(carpenter);
 
