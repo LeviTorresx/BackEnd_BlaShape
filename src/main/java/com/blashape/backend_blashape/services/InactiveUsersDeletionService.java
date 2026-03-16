@@ -20,9 +20,9 @@ public class InactiveUsersDeletionService {
         carpenterRepository.deleteInactiveCarpentersOlderThan30Days();
     }
 
-    @Scheduled(fixedRate = 10000) //Cada 10 segundos
+    /*@Scheduled(fixedRate = 10000) //Cada 10 segundos
     public void deleteInactiveUsersForTesting() {
         customerRepository.deleteInactiveCustomersOlderThan3Minutes();
         carpenterRepository.deleteInactiveCarpentersOlderThan3Minutes();
-    }
+    }*/ 
 }
