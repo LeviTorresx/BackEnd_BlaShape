@@ -6,6 +6,7 @@ import com.blashape.backend_blashape.DTOs.LoginRequest;
 import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.services.AuthService;
+import com.blashape.backend_blashape.services.CarpenterService;
 import com.blashape.backend_blashape.services.TwoFactorAuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final CarpenterService carpenterService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final JwtUtil jwtUtil;
     private final String mKey = "message";
@@ -157,5 +159,11 @@ public class AuthController {
     public ResponseEntity<Map<String, String>>  logout(HttpServletResponse response) {
         authService.logout(response);
         return ResponseEntity.ok(Map.of(mKey, "Sesión cerrada exitosamente"));
+    }
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<Map<String, String>> deleteAccount(@RequestParam Long id){
+        carpenterService.deleteCarpenter(id);
+        return ResponseEntity.ok(Map.of(mKey, "Cuenta eliminada exitosamente"));
     }
 }

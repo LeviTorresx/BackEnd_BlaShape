@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    @Query("SELECT c FROM Customer c WHERE c.carpenter.carpenterId = :carpenterId AND c.deleted = false")
+    @Query("SELECT c FROM Customer c WHERE c.carpenter.carpenterId = :carpenterId AND c.isActive = true")
     List<Customer> findActiveCustomersByCarpenterId(@Param("carpenterId") Long carpenterId);
 
     boolean existsByDni(String dni);

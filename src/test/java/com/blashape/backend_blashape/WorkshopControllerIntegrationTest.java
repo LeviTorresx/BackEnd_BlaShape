@@ -1,7 +1,6 @@
 package com.blashape.backend_blashape;
 
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
-import com.blashape.backend_blashape.DTOs.WorkshopResponse;
 import com.blashape.backend_blashape.controllers.WorkshopController;
 import com.blashape.backend_blashape.controllers.GlobalExceptionHandler;
 import com.blashape.backend_blashape.services.WorkshopService;

@@ -238,7 +238,7 @@ class CustomerServiceTest {
 
         customerService.deleteCustomer(1L);
 
-        assertTrue(customer.isDeleted());
+        assertTrue(!customer.getIsActive());
         assertNotNull(customer.getDeletedAt());
         verify(customerRepository).save(customer);
     }

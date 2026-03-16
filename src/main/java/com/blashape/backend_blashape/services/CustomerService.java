@@ -27,6 +27,7 @@ public class CustomerService {
     private final CarpenterRepository carpenterRepository;
     private final JwtUtil jwtUtil;
     private final CustomerMapper customerMapper;
+    private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado con ID: ";
     
     public CustomerDTO createCustomer(CustomerDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -89,7 +90,7 @@ public class CustomerService {
 
     public CustomerDTO getCustomer(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: " + customerId));
+                .orElseThrow(() -> new EntityNotFoundException(CLIENTE_NO_ENCONTRADO + customerId));
         return customerMapper.toDTO(customer);
     }
 
@@ -114,11 +115,9 @@ public class CustomerService {
                 .toList();
     }
 
-
-
     public CustomerDTO updateCustomer(Long customerId, CustomerDTO dto) {
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: " + customerId));
+                .orElseThrow(() -> new EntityNotFoundException(CLIENTE_NO_ENCONTRADO + customerId));
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             customer.setName(dto.getName());
@@ -148,8 +147,9 @@ public class CustomerService {
 
     public void deleteCustomer(Long customerId) {
         Customer customer =  customerRepository.findById(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: "+ customerId));
-        customer.setDeleted(true);
+                .orElseThrow(() -> new EntityNotFoundException(CLIENTE_NO_ENCONTRADO + customerId));
+
+        customer.setIsActive(false);
         customer.setDeletedAt(LocalDateTime.now());
 
         customerRepository.save(customer);
