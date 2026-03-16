@@ -1,9 +1,6 @@
 package com.blashape.backend_blashape.controllers;
 
-import com.blashape.backend_blashape.DTOs.CarpenterDTO;
-import com.blashape.backend_blashape.DTOs.CarpenterResponse;
-import com.blashape.backend_blashape.DTOs.LoginRequest;
-import com.blashape.backend_blashape.DTOs.LoginResponse;
+import com.blashape.backend_blashape.DTOs.*;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.services.AuthService;
 import com.blashape.backend_blashape.services.TwoFactorAuthService;
@@ -134,6 +131,27 @@ public class AuthController {
         request.getSession().removeAttribute("RESET_EMAIL");
 
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @CookieValue(name = "jwt", required = false) String token,
+            @RequestBody ChangePasswordRequest request) {
+
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(401)
+                    .body(Map.of(mKey, "No autorizado"));
+        }
+
+        authService.changePassword(
+                token,
+                request.getCurrentPassword(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                Map.of(mKey, "Contraseña actualizada correctamente")
+        );
     }
 
     @PostMapping("/forgot-password")

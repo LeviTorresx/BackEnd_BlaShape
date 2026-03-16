@@ -172,6 +172,39 @@ public class AuthService {
         carpenterRepository.save(carpenter);
     }
 
+    public void changePassword(String token, String currentPassword, String newPassword) {
+
+        if (token == null || token.isEmpty()) {
+            throw new RuntimeException("Token missing");
+        }
+
+        String email = jwtUtil.extractEmail(token);
+
+        Carpenter carpenter = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // validar contraseña actual
+        if (!passwordEncoder.matches(currentPassword, carpenter.getPassword())) {
+            throw new IllegalArgumentException("La contraseña actual es incorrecta");
+        }
+
+        // evitar reutilizar contraseña
+        if (passwordEncoder.matches(newPassword, carpenter.getPassword())) {
+            throw new IllegalArgumentException("La nueva contraseña no puede ser igual a la actual");
+        }
+
+        // reglas de seguridad
+        if (!newPassword.matches("^(?=.*[A-Z])(?=.*[a-z]).{8,}$")) {
+            throw new IllegalArgumentException(
+                    "La contraseña debe tener mínimo 8 caracteres, una mayúscula y una minúscula"
+            );
+        }
+
+        carpenter.setPassword(passwordEncoder.encode(newPassword));
+
+        carpenterRepository.save(carpenter);
+    }
+
     public void logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("jwt", null);
         cookie.setHttpOnly(true);
