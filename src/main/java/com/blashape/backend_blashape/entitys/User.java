@@ -1,5 +1,8 @@
 package com.blashape.backend_blashape.entitys;
 
+import java.time.Instant;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
@@ -14,12 +17,26 @@ import lombok.Setter;
 @AllArgsConstructor
 @MappedSuperclass
 public abstract class User {
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String lastName;
+
+    @Column(nullable = false, unique = true)
     private String dni;
-    private String email;
+
+    @Column(nullable = false, unique = true)
     private String phone;
+
+    @Column(nullable = false, unique = true)
+    private String email;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    private Boolean isActive;
+
+    private Instant deletedAt;
 }

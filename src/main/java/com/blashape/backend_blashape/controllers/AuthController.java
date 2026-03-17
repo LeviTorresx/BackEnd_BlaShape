@@ -1,11 +1,9 @@
 package com.blashape.backend_blashape.controllers;
 
-import com.blashape.backend_blashape.DTOs.CarpenterDTO;
-import com.blashape.backend_blashape.DTOs.CarpenterResponse;
-import com.blashape.backend_blashape.DTOs.LoginRequest;
-import com.blashape.backend_blashape.DTOs.LoginResponse;
+import com.blashape.backend_blashape.DTOs.*;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.services.AuthService;
+import com.blashape.backend_blashape.services.CarpenterService;
 import com.blashape.backend_blashape.services.TwoFactorAuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +20,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final CarpenterService carpenterService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final JwtUtil jwtUtil;
     private final String mKey = "message";
@@ -49,7 +48,6 @@ public class AuthController {
         response.addCookie(cookie);
 
         return ResponseEntity.ok(Map.of(mKey, "Inicio de sesión exitoso"));
-
     }
 
     @GetMapping("/me")
@@ -100,25 +98,90 @@ public class AuthController {
         return ResponseEntity.status(401).body("Código incorrecto.");
     }
 
+    @PostMapping("/verify-reset-code")
+    public ResponseEntity<String> verifyResetCode(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+
+        String email = body.get("email");
+        String code = body.get("code");
+
+        if (twoFactorAuthService.verifyCode(email, code)) {
+
+            request.getSession().setAttribute("RESET_EMAIL", email);
+
+            return ResponseEntity.ok("Código verificado correctamente");
+        }
+
+        return ResponseEntity.status(401).body("Código incorrecto o expirado.");
+    }
+
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(
             HttpServletRequest request,
             @RequestParam String newPassword) {
 
-        String token = jwtUtil.extractTokenFromCookie(request);
-        String email = jwtUtil.extractEmail(token);
+        String email = (String) request.getSession().getAttribute("RESET_EMAIL");
 
-        if (!twoFactorAuthService.isVerified(email)) {
+        if (email == null) {
             return ResponseEntity.status(403).body("No tienes verificación válida.");
         }
 
         authService.updatePassword(email, newPassword);
+        twoFactorAuthService.clearVerification(email);
+
+        request.getSession().removeAttribute("RESET_EMAIL");
+
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @CookieValue(name = "jwt", required = false) String token,
+            @RequestBody ChangePasswordRequest request) {
+
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(401)
+                    .body(Map.of(mKey, "No autorizado"));
+        }
+
+        authService.changePassword(
+                token,
+                request.getCurrentPassword(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                Map.of(mKey, "Contraseña actualizada correctamente")
+        );
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> body) {
+
+        String email = body.get("email");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(mKey, "Debes proporcionar un correo válido"));
+        }
+
+        twoFactorAuthService.sendVerificationCode(email);
+
+        return ResponseEntity.ok(
+                Map.of(mKey, "Si el correo existe, se enviará un código de verificación.")
+        );
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>>  logout(HttpServletResponse response) {
         authService.logout(response);
         return ResponseEntity.ok(Map.of(mKey, "Sesión cerrada exitosamente"));
+    }
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<Map<String, String>> deleteAccount(@RequestParam Long id){
+        carpenterService.deleteCarpenter(id);
+        return ResponseEntity.ok(Map.of(mKey, "Cuenta eliminada exitosamente"));
     }
 }

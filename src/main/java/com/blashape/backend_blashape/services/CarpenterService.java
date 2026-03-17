@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -16,10 +17,11 @@ import java.util.List;
 public class CarpenterService {
     private final CarpenterRepository carpenterRepository;
     private final CarpenterMapper carpenterMapper;
+    private static final String CARPINTERO_NO_ENCONTRADO = "Carpintero no encontrado con ID: ";
 
     public CarpenterDTO getCarpenterById(Long id) {
         Carpenter carpenter = carpenterRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException(CARPINTERO_NO_ENCONTRADO + id));
 
         return carpenterMapper.toDTO(carpenter);
     }
@@ -33,7 +35,7 @@ public class CarpenterService {
 
     public CarpenterDTO updateCarpenter(Long id, CarpenterDTO dto) {
         Carpenter existing = carpenterRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException(CARPINTERO_NO_ENCONTRADO + id));
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             existing.setName(dto.getName());
@@ -60,9 +62,12 @@ public class CarpenterService {
     }
 
     public void deleteCarpenter(Long id) {
-        if (!carpenterRepository.existsById(id)) {
-            throw new EntityNotFoundException("Carpintero no encontrado con ID: " + id);
-        }
-        carpenterRepository.deleteById(id);
+        Carpenter carpenter = carpenterRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(CARPINTERO_NO_ENCONTRADO + id));
+
+        carpenter.setIsActive(false);
+        carpenter.setDeletedAt(Instant.now());
+
+        carpenterRepository.save(carpenter);
     }
 }
