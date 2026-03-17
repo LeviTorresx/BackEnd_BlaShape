@@ -38,5 +38,8 @@ public abstract class User {
     @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     private Boolean isActive;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
     private Instant deletedAt;
 }

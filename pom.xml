@@ -119,6 +119,11 @@
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.6.0</version>
+        </dependency>
 		<!-- iText7 - generacion de PDF profesional -->
 		<dependency>
 			<groupId>com.itextpdf</groupId>
