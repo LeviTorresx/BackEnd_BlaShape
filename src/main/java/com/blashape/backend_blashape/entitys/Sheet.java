@@ -17,10 +17,12 @@ public class Sheet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sheetId;
-    private Double height;
-    private Double width;
+    private double height;
+    private double width;
 
     @ManyToOne
     @JoinColumn(name = "material_id", referencedColumnName = "materialId")
     private Material material;
+
+    public double getAreaM2(){return (height*width)/1_000_000;}
 }

@@ -17,10 +17,12 @@ public class Piece{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long pieceId;
     private int quantity;
-    private Double height;
-    private Double width;
+    private String name;
+    private double height;
+    private double width;
     private Double thickness;
     private String materialName;
+    private Boolean rotationAllowed;
 
     @Embedded
     private Color color;
@@ -31,4 +33,17 @@ public class Piece{
     @ManyToOne
     @JoinColumn(name = "cutting_id")
     private Cutting cutting;
+
+    public double  getAreaMm2() {return width*height;}
+
+    public int amountEdgeBanding (){
+        int count = 0;
+        if (edges.getTop()) count++;
+        if (edges.getBottom()) count++;
+        if (edges.getLeft()) count++;
+        if (edges.getRight()) count++;
+        return count;
+
+    }
+
 }

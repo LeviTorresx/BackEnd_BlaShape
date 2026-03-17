@@ -169,7 +169,7 @@ class AuthServiceTest {
         // Act & Assert
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> authService.register(carpenterDTO));
-        assertEquals("El nombre es obligatorio", exception.getMessage());
+        assertEquals("El name es obligatorio", exception.getMessage());
     }
 
     @Test
