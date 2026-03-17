@@ -3,7 +3,9 @@ package com.blashape.backend_blashape.services;
 import com.blashape.backend_blashape.entitys.CuttingPosition;
 import com.blashape.backend_blashape.entitys.CuttingSheet;
 import com.blashape.backend_blashape.entitys.Sheet;
+import org.springframework.stereotype.Service;
 
+@Service
 public class PreviewGeneratorSVG {
 
     private static final double SVG_MAX_W   = 900;
@@ -66,7 +68,7 @@ public class PreviewGeneratorSVG {
         if (c.isEdgeBandingY2()) sb.append(line(px+pw, py,   px+pw, py+ph,   gt));
     }
 
-    public String generarSVG(CuttingSheet sheet) {
+    public String generateSVG(CuttingSheet sheet) {
         Sheet t = sheet.getSheet();
 
         double scale = Math.min(SVG_MAX_W / t.getWidth(), SVG_MAX_H / t.getHeight());

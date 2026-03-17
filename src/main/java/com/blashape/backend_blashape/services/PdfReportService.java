@@ -4,26 +4,36 @@ import com.blashape.backend_blashape.entitys.*;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
+import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.layout.Document;
+import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-
+@Service
 public class PdfReportService {
-    private static final DeviceRgb AZUL_OSCURO  = new DeviceRgb(0x1a, 0x2b, 0x4a);
-    private static final DeviceRgb AZUL_MEDIO   = new DeviceRgb(0x2e, 0x6d, 0xa8);
-    private static final DeviceRgb AZUL_CLARO   = new DeviceRgb(0xe6, 0xf1, 0xfb);
-    private static final DeviceRgb VERDE_ACENTO = new DeviceRgb(0x1d, 0x9e, 0x75);
+    private static final DeviceRgb VIOLETA_OSCURO = new DeviceRgb(0x2e, 0x1a, 0x47); // profundo
+    private static final DeviceRgb VIOLETA_MEDIO = new DeviceRgb(0x6d, 0x3f, 0xa8); // principal
+    private static final DeviceRgb VIOLETA_CLARO = new DeviceRgb(0xf3, 0xe8, 0xff); // fondo suave
+
+    private static final DeviceRgb MORADO_ACENTO = new DeviceRgb(0x8e, 0x44, 0xad); // alternativa más intensa // acento moderno (más vivo)
     private static final DeviceRgb GRIS_CLARO   = new DeviceRgb(0xf5, 0xf5, 0xf3);
     private static final DeviceRgb GRIS_BORDE   = new DeviceRgb(0xcc, 0xcb, 0xc5);
     private static final DeviceRgb ROJO_TAPAC   = new DeviceRgb(0xe7, 0x4c, 0x3c);
-    private static final DeviceRgb PIEZA_FILL   = new DeviceRgb(0xa8, 0xd8, 0xea);
-    private static final DeviceRgb PIEZA_ROT    = new DeviceRgb(0xb8, 0xe4, 0xc9);
-    private static final DeviceRgb PIEZA_BORDE  = new DeviceRgb(0x2c, 0x3e, 0x50);
+
+    private static final DeviceRgb PIEZA_FILL   = new DeviceRgb(0xd6, 0xc2, 0xf0); // violeta suave
+    private static final DeviceRgb PIEZA_ROT    = new DeviceRgb(0xe0, 0xd4, 0xf7); // aún más claro
+    private static final DeviceRgb PIEZA_BORDE  = new DeviceRgb(0x3d, 0x2c, 0x5a); // borde oscuro
 
     /**
             * Genera el PDF completo y lo devuelve como array de bytes.
@@ -36,9 +46,9 @@ public class PdfReportService {
 
     private void drawHeaderSeccion(PdfCanvas canvas, float W, float H,
                                           String titulo, PdfFont fontR, PdfFont fontB) {
-        canvas.setFillColor(AZUL_OSCURO)
+        canvas.setFillColor(VIOLETA_OSCURO)
                 .rectangle(0, H - 50, W, 50).fill();
-        canvas.setFillColor(VERDE_ACENTO)
+        canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(0, H - 53, W, 3).fill();
         canvas.beginText().setFontAndSize(fontB, 16).setFillColor(ColorConstants.WHITE)
                 .moveText(40, H - 32).showText(titulo).endText();
@@ -53,7 +63,7 @@ public class PdfReportService {
                 .moveTo(40, 22).lineTo(W - 40, 22).stroke();
         canvas.beginText().setFontAndSize(fontR, 8)
                 .setFillColor(new DeviceRgb(0x88,0x87,0x80))
-                .moveText(40, 10).showText("CNC Optimizer  |  " + seccion).endText();
+                .moveText(40, 10).showText("Blashape  |  " + seccion).endText();
         String pagTxt = totalPage > 0
                 ? "Pagina " + numPage + " de " + totalPage
                 : "Pagina " + numPage;
@@ -86,12 +96,12 @@ public class PdfReportService {
 
         // Bloque superior azul oscuro (40% de la pagina)
         float sectionH = H * 0.42f;
-        canvas.setFillColor(AZUL_OSCURO)
+        canvas.setFillColor(VIOLETA_OSCURO)
                 .rectangle(0, H - sectionH, W, sectionH)
                 .fill();
 
         // Franja de acento verde
-        canvas.setFillColor(VERDE_ACENTO)
+        canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(0, H - sectionH - 6, W, 6)
                 .fill();
 
@@ -105,7 +115,7 @@ public class PdfReportService {
 
         // Logo / icono CNC (rectangulos simbolicos de corte)
         float iconX = 52, iconY = H - sectionH + sectionH * 0.45f;
-        canvas.setFillColor(VERDE_ACENTO)
+        canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(iconX,      iconY,      60, 4).fill()
                 .rectangle(iconX,      iconY + 10, 40, 4).fill()
                 .rectangle(iconX,      iconY + 20, 50, 4).fill()
@@ -124,7 +134,7 @@ public class PdfReportService {
                 .setFontAndSize(fontR, 13)
                 .setFillColor(new DeviceRgb(0xb5, 0xd4, 0xf4))
                 .moveText(52, H - sectionH + sectionH * 0.22f)
-                .showText("Plan de Corte CNC  |  Optimizacion 2D")
+                .showText("Plan de Corte  |  Blashape ")
                 .endText();
 
         // Fecha y hora
@@ -150,7 +160,7 @@ public class PdfReportService {
                 String.format("%.2f m²", result.getTotalWastedM2()),
                 String.format("%.1f ml", banding.totalMlGeneral())
         };
-        DeviceRgb[] accents = {AZUL_MEDIO, VERDE_ACENTO, ROJO_TAPAC, AZUL_MEDIO};
+        DeviceRgb[] accents = {VIOLETA_MEDIO, MORADO_ACENTO, ROJO_TAPAC, VIOLETA_MEDIO};
 
         for (int i = 0; i < 4; i++) {
             float cx = 52 + i * (cardW + cardGap);
@@ -168,7 +178,7 @@ public class PdfReportService {
             // Valor grande
             canvas.beginText()
                     .setFontAndSize(fontB, 22)
-                    .setFillColor(AZUL_OSCURO)
+                    .setFillColor(VIOLETA_OSCURO)
                     .moveText(cx + 14, cardY - 38)
                     .showText(values[i])
                     .endText();
@@ -183,11 +193,11 @@ public class PdfReportService {
         float detY = cardY - cardH - 40;
         canvas.beginText()
                 .setFontAndSize(fontB, 11)
-                .setFillColor(AZUL_OSCURO)
+                .setFillColor(VIOLETA_OSCURO)
                 .moveText(52, detY)
                 .showText("Detalle de tapacanto")
                 .endText();
-        canvas.setFillColor(VERDE_ACENTO)
+        canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(52, detY - 4, 32, 2).fill();
 
         float rowY = detY - 22;
@@ -197,7 +207,7 @@ public class PdfReportService {
                 "Total general:                 " + String.format("%.2f ml", banding.totalMlGeneral()),
         };
         for (String row : tapRows) {
-            canvas.beginText().setFontAndSize(fontR, 10).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 10).setFillColor(VIOLETA_OSCURO)
                     .moveText(52, rowY).showText(row).endText();
             rowY -= 16;
         }
@@ -208,21 +218,20 @@ public class PdfReportService {
             float rY = detY - 22;
             assert t.getMaterial() != null;
             String[] infoRows = {
-                    "Material:  " + (t.getMaterial() == null ? "-" : t.getMaterial()),
+                    "Material:  " + t.getMaterial(),
                     "Dimension: " + (int)t.getWidth() + " x " + (int)t.getHeight() + " mm",
-                    "Grosor:    " + t.getMaterial().getThickness().get(0) + " mm",
                     "Piezas:    " + result.getTotalPiecesLocated() + " ubicadas"
                             + (result.getMissingParts() > 0
                             ? "  /  " + result.getMissingParts() + " sin ubicar" : "")
             };
             float col2X = W / 2f + 10;
-            canvas.beginText().setFontAndSize(fontB, 11).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontB, 11).setFillColor(VIOLETA_OSCURO)
                     .moveText(col2X, detY).showText("Datos del tablero").endText();
-            canvas.setFillColor(AZUL_MEDIO)
+            canvas.setFillColor(VIOLETA_MEDIO)
                     .rectangle(col2X, detY - 4, 32, 2).fill();
             float rRowY = detY - 22;
             for (String row : infoRows) {
-                canvas.beginText().setFontAndSize(fontR, 10).setFillColor(AZUL_OSCURO)
+                canvas.beginText().setFontAndSize(fontR, 10).setFillColor(VIOLETA_OSCURO)
                         .moveText(col2X, rRowY).showText(row).endText();
                 rRowY -= 16;
             }
@@ -260,7 +269,7 @@ public class PdfReportService {
         float[] colX  = {40, 160, 210, 265, 315, 365, 420, 480, 530};
         String[] heads = {"Pieza", "Ancho", "Largo", "Cant.", "T.A1", "T.A2", "T.L1", "T.L2", "Tapacanto ml"};
 
-        canvas.setFillColor(AZUL_OSCURO)
+        canvas.setFillColor(VIOLETA_OSCURO)
                 .rectangle(40, tableY - 18, W - 80, 20)
                 .fill();
         for (int i = 0; i < heads.length; i++) {
@@ -276,7 +285,7 @@ public class PdfReportService {
             SummaryPiece pr = entry.getValue();
             Piece p = pr.piece;
             if (alt) {
-                canvas.setFillColor(AZUL_CLARO)
+                canvas.setFillColor(VIOLETA_CLARO)
                         .rectangle(40, rowY - rowH + 3, W - 80, rowH).fill();
             }
             String nombre = p.getName() == null ? "-" : p.getName();
@@ -299,7 +308,7 @@ public class PdfReportService {
                 boolean esTap = i >= 4 && i <= 7 && cells[i].equals("SI");
                 canvas.beginText()
                         .setFontAndSize(fontR, 9)
-                        .setFillColor(esTap ? VERDE_ACENTO : AZUL_OSCURO)
+                        .setFillColor(esTap ? MORADO_ACENTO : VIOLETA_OSCURO)
                         .moveText(colX[i], rowY - 8)
                         .showText(cells[i])
                         .endText();
@@ -314,20 +323,20 @@ public class PdfReportService {
 
         // Totales
         rowY -= 8;
-        canvas.setFillColor(AZUL_OSCURO)
+        canvas.setFillColor(VIOLETA_OSCURO)
                 .rectangle(40, rowY - 16, W - 80, 18).fill();
         canvas.beginText().setFontAndSize(fontB, 9).setFillColor(ColorConstants.WHITE)
                 .moveText(colX[0], rowY - 8)
                 .showText("TOTAL  —  " + result.getTotalPiecesLocated() + " piezas ubicadas")
                 .endText();
-        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(VERDE_ACENTO)
+        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(MORADO_ACENTO)
                 .moveText(colX[8], rowY - 8)
                 .showText(String.format("%.2f ml", banding.totalMlGeneral()))
                 .endText();
 
         // Leyenda tapacanto
         float leyY = rowY - 40;
-        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(AZUL_OSCURO)
+        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(VIOLETA_OSCURO)
                 .moveText(40, leyY).showText("Leyenda tapacanto:").endText();
         canvas.beginText().setFontAndSize(fontR, 8).setFillColor(new DeviceRgb(0x44,0x44,0x41))
                 .moveText(40, leyY - 14)
@@ -339,7 +348,7 @@ public class PdfReportService {
 
     // ─── Pagina de plano de corte ─────────────────────────────────────────────
 
-    private void dibujarPlanoCortePage(PdfPage page, CuttingSheet sheet,
+    private void drawCutting(PdfPage page, CuttingSheet sheet,
                                        int numSheet, int totalSheets,
                                        PdfFont fontR, PdfFont fontB) {
         PdfCanvas canvas = new PdfCanvas(page);
@@ -351,9 +360,9 @@ public class PdfReportService {
         float margin   = 30f;
 
         // ── Encabezado ──────────────────────────────────────────────────────
-        canvas.setFillColor(AZUL_OSCURO)
+        canvas.setFillColor(VIOLETA_OSCURO)
                 .rectangle(0, H - headerH, W, headerH).fill();
-        canvas.setFillColor(VERDE_ACENTO)
+        canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(0, H - headerH - 3, W, 3).fill();
 
         canvas.beginText().setFontAndSize(fontB, 14).setFillColor(ColorConstants.WHITE)
@@ -491,6 +500,47 @@ public class PdfReportService {
             if (c.isEdgeBandingY2())
                 canvas.moveTo(px + pw, py).lineTo(px + pw, py + ph).stroke();
         }
+        // ── Paso 4: etiquetas de piezas (capa superior) ──────────────────
+        for (CuttingPosition c : sheet.getCuts()) {
+            float px = offsetX + (float)(c.getX()            * escala);
+            float py = offsetY + (float)(c.getY()            * escala);
+            float pw = (float)(c.getEffectiveWidth() * escala);
+            float ph = (float)(c.getEffectiveHeight() * escala);
+
+            if (pw > 22 && ph > 14) {
+                float fs = Math.min(8f, Math.max(5f, Math.min(pw / 8f, ph / 3.5f)));
+                String nombre = c.getPiece().getName() == null ? "" : c.getPiece().getName();
+                if (nombre.length() > 12 && pw < 60) nombre = nombre.substring(0, 10) + "..";
+
+                float textX = px + pw / 2f - (nombre.length() * fs * 0.3f);
+                float textY = py + ph / 2f + (pw > 40 && ph > 22 ? fs * 0.5f : 0);
+
+                canvas.beginText().setFontAndSize(fontB, fs).setFillColor(VIOLETA_OSCURO)
+                        .moveText(textX, textY)
+                        .showText(nombre + (c.isRotated() ? " [R]" : "")).endText();
+
+                if (pw > 40 && ph > 22) {
+                    String dims = (int)c.getEffectiveWidth() + "x" + (int)c.getEffectiveHeight();
+                    float dimFs = Math.max(4.5f, fs - 1.5f);
+                    canvas.beginText().setFontAndSize(fontR, dimFs)
+                            .setFillColor(new DeviceRgb(0x44, 0x44, 0x41))
+                            .moveText(px + pw/2f - dims.length() * dimFs * 0.28f, textY - fs * 1.4f)
+                            .showText(dims).endText();
+                }
+            }
+
+            // Marcas de tapacanto (lineas rojas en bordes)
+            float gt = Math.max(1f, Math.min(2.5f, (float)(escala * 4)));
+            canvas.setStrokeColor(ROJO_TAPAC).setLineWidth(gt);
+            if (c.isEdgeBandingX1())
+                canvas.moveTo(px, py + ph).lineTo(px + pw, py + ph).stroke();
+            if (c.isEdgeBandingX2())
+                canvas.moveTo(px, py).lineTo(px + pw, py).stroke();
+            if (c.isEdgeBandingY1())
+                canvas.moveTo(px, py).lineTo(px, py + ph).stroke();
+            if (c.isEdgeBandingY2())
+                canvas.moveTo(px + pw, py).lineTo(px + pw, py + ph).stroke();
+        }
 
         // Cotas del tablero
         canvas.setStrokeColor(new DeviceRgb(0x44,0x44,0x41)).setLineWidth(0.4f);
@@ -515,7 +565,7 @@ public class PdfReportService {
         if (leyX + 85 < W - margin) {
             float leyY = offsetY + th;
 
-            canvas.beginText().setFontAndSize(fontB, 8).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontB, 8).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX, leyY).showText("Leyenda").endText();
             leyY -= 14;
 
@@ -523,7 +573,7 @@ public class PdfReportService {
             canvas.setFillColor(PIEZA_FILL).rectangle(leyX, leyY - 8, 14, 10).fill();
             canvas.setStrokeColor(PIEZA_BORDE).setLineWidth(0.4f)
                     .rectangle(leyX, leyY - 8, 14, 10).stroke();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Pieza normal").endText();
             leyY -= 15;
 
@@ -531,7 +581,7 @@ public class PdfReportService {
             canvas.setFillColor(PIEZA_ROT).rectangle(leyX, leyY - 8, 14, 10).fill();
             canvas.setStrokeColor(PIEZA_BORDE).setLineWidth(0.4f)
                     .rectangle(leyX, leyY - 8, 14, 10).stroke();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Pieza rotada 90deg").endText();
             leyY -= 15;
 
@@ -541,7 +591,7 @@ public class PdfReportService {
                     .setLineDash(dash, 0)
                     .moveTo(leyX, leyY - 4).lineTo(leyX + 14, leyY - 4).stroke();
             canvas.setLineDash(new float[]{}, 0);
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Linea guillotina").endText();
             leyY -= 15;
 
@@ -550,7 +600,7 @@ public class PdfReportService {
                     .moveTo(leyX, leyY - 8).lineTo(leyX + 14, leyY - 8)
                     .lineTo(leyX + 14, leyY - 1).lineTo(leyX, leyY - 1)
                     .closePath().stroke();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Contorno corte (kerf)").endText();
             leyY -= 15;
 
@@ -560,26 +610,65 @@ public class PdfReportService {
                     .lineTo(leyX + 8, leyY - 1)
                     .lineTo(leyX + 8, leyY - 7)
                     .closePath().fill();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Inicio de corte").endText();
             leyY -= 15;
 
             // Numero de orden
-            canvas.setFillColor(AZUL_OSCURO).circle(leyX + 5, leyY - 4, 5).fill();
+            canvas.setFillColor(VIOLETA_OSCURO).circle(leyX + 5, leyY - 4, 5).fill();
             canvas.beginText().setFontAndSize(fontB, 5).setFillColor(ColorConstants.WHITE)
                     .moveText(leyX + 3, leyY - 6).showText("1").endText();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Orden de corte").endText();
             leyY -= 15;
 
             // Tapacanto
             canvas.setStrokeColor(ROJO_TAPAC).setLineWidth(2f)
                     .moveTo(leyX, leyY - 4).lineTo(leyX + 14, leyY - 4).stroke();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(AZUL_OSCURO)
+            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Tapacanto").endText();
         }
 
         drawFooter(canvas, page, fontR, numSheet + 2, totalSheets + 2,
                 "Plano " + numSheet + "/" + totalSheets);
     }
+
+    public byte[] generate(CuttingResult result,
+                          BandingService.BandingSummary banding,
+                          String proyecto) throws IOException {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer  = new PdfWriter(baos);
+        PdfDocument pdf    = new PdfDocument(writer);
+        Document doc     = new Document(pdf, PageSize.A4);
+        doc.setMargins(0, 0, 0, 0);
+
+        PdfFont fontRegular = PdfFontFactory.createFont("Helvetica");
+        PdfFont fontBold    = PdfFontFactory.createFont("Helvetica-Bold");
+
+        String nombreProyecto = (proyecto != null && !proyecto.isBlank())
+                ? proyecto : "Plan de Corte CNC";
+
+        // ── Pagina 1: Portada ──────────────────────────────────────────────
+        PdfPage portadaPage = pdf.addNewPage(PageSize.A4);
+        drawCover(portadaPage, result, banding,
+                nombreProyecto, fontRegular, fontBold);
+
+        // ── Pagina 2: Lista de piezas ─────────────────────────────────────
+        PdfPage listPage = pdf.addNewPage(PageSize.A4);
+        drawPieceList(listPage, result, banding, fontRegular, fontBold);
+
+        // ── Paginas 3+: Un plano por tablero ──────────────────────────────
+        int planoNum = 1;
+        for (CuttingSheet plano : result.getSheets()) {
+            PdfPage planoPage = pdf.addNewPage(PageSize.A4.rotate());
+            drawCutting(planoPage, plano, planoNum,
+                    result.getSheets().size(), fontRegular, fontBold);
+            planoNum++;
+        }
+
+        doc.close();
+        return baos.toByteArray();
+    }
+
 }
