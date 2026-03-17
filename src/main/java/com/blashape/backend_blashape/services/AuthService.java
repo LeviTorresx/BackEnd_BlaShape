@@ -5,15 +5,22 @@ import com.blashape.backend_blashape.DTOs.LoginRequest;
 import com.blashape.backend_blashape.DTOs.LoginResponse;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
+import com.blashape.backend_blashape.entitys.EmailVerificationToken;
 import com.blashape.backend_blashape.entitys.UserRole;
 import com.blashape.backend_blashape.mapper.CarpenterMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
+import com.blashape.backend_blashape.repositories.EmailVerificationTokenRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +29,11 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final CarpenterMapper carpenterMapper;
+    private final EmailVerificationTokenRepository tokenRepository;
+    private final EmailService emailService;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     public LoginResponse login(LoginRequest request) {
         Carpenter carpenter = carpenterRepository.findByEmail(request.getEmail())
@@ -30,12 +42,65 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), carpenter.getPassword())) {
             throw new RuntimeException("Contraseña incorrecta");
         }
+        if (!carpenter.getEmailVerified()) {
+            throw new RuntimeException("Debes verificar tu correo antes de iniciar sesión");
+        }
 
         String token = jwtUtil.generateToken(carpenter.getEmail(), carpenter.getCarpenterId());
 
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         return response;
+    }
+
+    private String buildVerificationEmail(String name, String token) {
+
+        String html = """
+            <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+              
+              <img src="{{LOGO_URL}}" alt="Blashape Logo" 
+                   style="width: 120px; margin-bottom: 20px;" />
+        
+              <h2 style="color: #4c1d95;">Verifica tu correo</h2>
+        
+              <p>Hola {{NAME}},</p>
+        
+              <p>Gracias por registrarte en Blashape.</p>
+              <p>Haz clic en el botón para verificar tu cuenta:</p>
+        
+              <a href="{{LINK}}"
+                 style="
+                    display: inline-block;
+                    padding: 12px 24px;
+                    margin-top: 20px;
+                    background-color: #4c1d95;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                 ">
+                 Verificar correo
+              </a>
+        
+              <p style="margin-top: 20px; font-size: 12px; color: gray;">
+                Este enlace expirará en 24 horas.
+              </p>
+        
+              <p style="font-size: 12px; color: gray;">
+                Si no creaste esta cuenta, ignora este mensaje.
+              </p>
+            </div>
+            """;
+
+        String link = frontendUrl + "/verify-email?token=" + token;
+        String logoUrl = "https://res.cloudinary.com/dr63i7owa/image/upload/v1773726191/logo_BS_uxob0a.png";
+
+        // reemplazos dinámicos
+        html = html.replace("{{NAME}}", name);
+        html = html.replace("{{LINK}}", link);
+        html = html.replace("{{LOGO_URL}}", logoUrl);
+
+        return html;
     }
 
     public CarpenterDTO register(CarpenterDTO dto) {
@@ -63,27 +128,117 @@ public class AuthService {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
 
-        if (carpenterRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("El correo ya está registrado");
-        }
         if (carpenterRepository.existsByDni(dto.getDni())) {
             throw new IllegalArgumentException("La cédula ya está registrada");
+        }
+
+        Carpenter existing = carpenterRepository.findByEmail(dto.getEmail()).orElse(null);
+
+        if (existing != null) {
+
+            if (existing.getEmailVerified()) {
+                throw new IllegalArgumentException("El correo ya está registrado");
+            }
+
+            // Si existe pero NO está verificado, reenviar verificación
+            createAndSendVerificationToken(existing);
+
+            CarpenterDTO response = carpenterMapper.toDTO(existing);
+            response.setPassword(null);
+            return response;
         }
 
         Carpenter carpenter = carpenterMapper.toEntity(dto);
 
         carpenter.setPassword(passwordEncoder.encode(dto.getPassword()));
-
         carpenter.setWorkshop(null);
         carpenter.setRole(UserRole.CARPENTER);
         carpenter.setIsActive(true);
+        carpenter.setEmailVerified(false);
 
         Carpenter saved = carpenterRepository.save(carpenter);
+
+        String token = UUID.randomUUID().toString();
+
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+
+        verificationToken.setToken(token);
+        verificationToken.setCarpenter(saved);
+        verificationToken.setExpirationDate(
+                Instant.now().plus(24, ChronoUnit.HOURS)
+        );
+
+        tokenRepository.save(verificationToken);
+
+        String emailBody = buildVerificationEmail(saved.getName(), token);
+
+        emailService.sendEmail(
+                saved.getEmail(),
+                "Verificación de cuenta - Blashape",
+                emailBody
+        );
 
         CarpenterDTO response = carpenterMapper.toDTO(saved);
         response.setWorkshop(null);
         response.setPassword(null);
         return response;
+    }
+
+    public void verifyEmail(String token) {
+
+        EmailVerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Token inválido"));
+
+        if (verificationToken.getExpirationDate().isBefore(Instant.now())) {
+            throw new RuntimeException("Token expirado");
+        }
+
+        Carpenter carpenter = verificationToken.getCarpenter();
+
+        carpenter.setEmailVerified(true);
+
+        carpenterRepository.save(carpenter);
+
+        tokenRepository.delete(verificationToken);
+    }
+
+    private void createAndSendVerificationToken(Carpenter carpenter) {
+
+        tokenRepository.deleteAll(
+                tokenRepository.findByCarpenter(carpenter)
+        );
+
+        String token = UUID.randomUUID().toString();
+
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+
+        verificationToken.setToken(token);
+        verificationToken.setCarpenter(carpenter);
+        verificationToken.setExpirationDate(
+                Instant.now().plus(24, ChronoUnit.HOURS)
+        );
+
+        tokenRepository.save(verificationToken);
+
+        String emailBody = buildVerificationEmail(carpenter.getName(), token);
+
+        emailService.sendEmail(
+                carpenter.getEmail(),
+                "Verificación de cuenta - Blashape",
+                emailBody
+        );
+    }
+
+    public void resendVerificationEmail(String email) {
+
+        Carpenter carpenter = carpenterRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+
+        if (carpenter.getEmailVerified()) {
+            throw new RuntimeException("El correo ya está verificado");
+        }
+
+        createAndSendVerificationToken(carpenter);
     }
 
     public CarpenterDTO getCarpenterFromToken(String token) {

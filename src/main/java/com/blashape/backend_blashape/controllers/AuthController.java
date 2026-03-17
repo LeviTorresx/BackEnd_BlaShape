@@ -31,6 +31,30 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(mKey,"Registro correcto "+"Bienvenido: "+response.getName()) );
     }
 
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok(Map.of("message", "Correo verificado correctamente"));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Map<String, String>> resendVerification(
+            @RequestBody Map<String, String> body) {
+
+        String email = body.get("email");
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(mKey, "Debes proporcionar un correo válido"));
+        }
+
+        authService.resendVerificationEmail(email);
+
+        return ResponseEntity.ok(
+                Map.of(mKey, "Correo de verificación reenviado")
+        );
+    }
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(
             @RequestBody LoginRequest request,
