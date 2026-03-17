@@ -1,11 +1,13 @@
 package com.blashape.backend_blashape.services;
 
 import com.blashape.backend_blashape.entitys.CuttingPosition;
+import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Service
 public class BandingService {
     public record BandingSummary(
             double totalMlWidth,    // metros lineales sobre ejes X (caraX1 + caraX2)
