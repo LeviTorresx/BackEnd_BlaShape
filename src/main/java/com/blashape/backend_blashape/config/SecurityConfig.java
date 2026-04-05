@@ -37,7 +37,8 @@ public class SecurityConfig {
                                         BASE_ENDPOINT + "/auth/verify-email",
                                         BASE_ENDPOINT + "/auth/resend-verification",
                                         BASE_ENDPOINT + "/auth/forgot-password",
-                                        BASE_ENDPOINT + "/auth/reset-password")
+                                        BASE_ENDPOINT + "/auth/reset-password",
+                                        BASE_ENDPOINT + "/auth/verify-reset-code")
                                         .permitAll()
                         .requestMatchers(BASE_ENDPOINT + "/auth/**")
                                         .authenticated()
