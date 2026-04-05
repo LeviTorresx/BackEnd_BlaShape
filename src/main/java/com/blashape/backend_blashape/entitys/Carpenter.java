@@ -40,4 +40,8 @@ public class Carpenter extends User {
     @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
     @JsonManagedReference(value = "carpenter-customer")
     private List<Customer> customers;
+
+    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
+    @JsonManagedReference(value = "carpenter-subscription")
+    private List<Subscription> subscriptions;
 }

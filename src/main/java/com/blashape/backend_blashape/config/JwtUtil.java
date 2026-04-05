@@ -18,7 +18,7 @@ public class JwtUtil {
     private String SECRET_KEY;
 
     @Value("${JWT_EXPIRATION}")
-    private long EXPIRATION_TIME; // ahora es long, no String
+    private long EXPIRATION_TIME; //ahora es long, no String
 
     public String generateToken(String email, Long carpenterId) {
         return Jwts.builder()
