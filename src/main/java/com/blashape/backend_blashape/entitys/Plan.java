@@ -2,6 +2,8 @@ package com.blashape.backend_blashape.entitys;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,6 +27,12 @@ public class Plan {
     @Column(nullable = false)
     private String planName;
 
+    private String description;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PlanInterval interval;
+
     @Column(nullable = false)
     private Long price;
 
@@ -47,9 +55,6 @@ public class Plan {
 
     @Column(nullable = false)
     private Boolean limitedRecord;
-
-    @Column(nullable = false)
-    private Integer duration;
 
     @Column(nullable = false)
     private Boolean meaningPieces;

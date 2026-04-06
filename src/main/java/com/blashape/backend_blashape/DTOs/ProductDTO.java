@@ -14,5 +14,5 @@ public class ProductDTO {
     private String description;
     private Long price;
     private String currency;
-    private String stripeProductId;
+    private String stripePriceId;
 }

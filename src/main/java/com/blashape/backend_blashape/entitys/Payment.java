@@ -39,7 +39,10 @@ public class Payment {
     @JoinColumn(name = "subscription_id")
     private Subscription subscription;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "plan_id")
+    private Plan plan;
+
     private String description;
 
     @ManyToOne
@@ -61,4 +64,6 @@ public class Payment {
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

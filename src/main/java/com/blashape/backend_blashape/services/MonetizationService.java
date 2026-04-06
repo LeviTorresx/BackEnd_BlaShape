@@ -73,6 +73,9 @@ public class MonetizationService {
         if (dto.getPlanName() != null && !dto.getPlanName().isBlank()) {
             existing.setPlanName(dto.getPlanName());
         }
+        if (dto.getDescription() != null && !dto.getDescription().isBlank()) {
+            existing.setDescription(dto.getDescription());
+        }
         if (dto.getPrice() != null) {
             existing.setPrice(dto.getPrice());
         }
@@ -93,9 +96,6 @@ public class MonetizationService {
         }
         if (dto.getLimitedRecord() != null) {
             existing.setLimitedRecord(dto.getLimitedRecord());
-        }
-        if (dto.getDuration() != null) {
-            existing.setDuration(dto.getDuration());
         }
         if (dto.getMeaningPieces() != null) {
             existing.setMeaningPieces(dto.getMeaningPieces());

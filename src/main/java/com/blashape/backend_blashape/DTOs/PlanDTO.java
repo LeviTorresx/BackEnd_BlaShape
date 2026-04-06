@@ -11,6 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class PlanDTO {
     private String planName;
+    private String description;
+    private String interval;
     private Long price;
     private String currency;
     private String stripePriceId;
@@ -19,7 +21,6 @@ public class PlanDTO {
     private Boolean limitedSvg;
     private Boolean pdf;
     private Boolean limitedRecord;
-    private Integer duration;
     private Boolean meaningPieces;
     private Boolean analyticsModule;
     private Boolean businessLicence;
