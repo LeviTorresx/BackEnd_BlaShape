@@ -3,6 +3,8 @@ package com.blashape.backend_blashape.entitys;
 import java.time.Instant;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,8 +33,13 @@ public class Subscription {
     private Plan plan;
 
     private String stripeSubscriptionId;
+
     private String stripeCustomerId;
+
+    @Enumerated(EnumType.STRING)
     private SubscriptionStatus status;
+
     private Instant startDate;
+    
     private Instant endDate;
 }
