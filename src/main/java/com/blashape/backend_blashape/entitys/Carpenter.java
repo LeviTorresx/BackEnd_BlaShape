@@ -25,6 +25,9 @@ public class Carpenter extends User {
     private String rut;
     private String password;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
     @OneToOne(mappedBy = "carpenter", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Workshop workshop;
