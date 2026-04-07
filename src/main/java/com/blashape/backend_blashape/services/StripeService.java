@@ -51,6 +51,13 @@ public class StripeService {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private PdfInvoiceService pdfInvoiceService;
+
+    @Autowired
+    private EmailService emailService;
+
+
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeKey;
@@ -213,8 +220,8 @@ public class StripeService {
         String paymentIdString = session.getMetadata().get("paymentId");
 
         if (paymentIdString == null) {
-                log.error("paymentId no encontrado en metadata");
-                throw new RuntimeException("paymentId ausente en metadata");
+            log.error("paymentId no encontrado en metadata");
+            throw new RuntimeException("paymentId ausente en metadata");
         }
 
         Long paymentId = Long.parseLong(paymentIdString);
@@ -222,8 +229,9 @@ public class StripeService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Pago no encontrado"));
 
+        // Evita reprocesar pagos ya completados
         if (PaymentStatus.PAID.equals(payment.getStatus())) {
-                return;
+            return;
         }
 
         payment.setStatus(PaymentStatus.PAID);
@@ -231,30 +239,82 @@ public class StripeService {
         payment.setUpdatedAt(Instant.now());
 
         if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
-                Subscription stripeSub = Subscription.retrieve(session.getSubscription());
 
-                String paymentIntent = null;
+            Subscription stripeSub = Subscription.retrieve(session.getSubscription());
 
-                if (stripeSub.getLatestInvoice() != null) {
-                        com.stripe.model.Invoice invoice = com.stripe.model.Invoice.retrieve(stripeSub.getLatestInvoice());
-                        paymentIntent = invoice.getPaymentIntent();
-                }
+            String paymentIntent = null;
 
-                AppSubscription subscription = new AppSubscription();
-                subscription.setCarpenter(payment.getCarpenter());
-                subscription.setPlan(payment.getPlan());
-                subscription.setStripeSubscriptionId(session.getSubscription());
-                subscription.setStripeCustomerId(session.getCustomer());
-                subscription.setStatus(SubscriptionStatus.ACTIVE);
-                subscription.setStartDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
-                subscription.setEndDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+            if (stripeSub.getLatestInvoice() != null) {
+                com.stripe.model.Invoice invoice =
+                        com.stripe.model.Invoice.retrieve(stripeSub.getLatestInvoice());
 
-                subscriptionRepository.save(subscription);
-                payment.setSubscription(subscription);
-                payment.setStripePaymentIntent(paymentIntent);
+                paymentIntent = invoice.getPaymentIntent();
+            }
+
+            AppSubscription subscription = new AppSubscription();
+            subscription.setCarpenter(payment.getCarpenter());
+            subscription.setPlan(payment.getPlan());
+            subscription.setStripeSubscriptionId(session.getSubscription());
+            subscription.setStripeCustomerId(session.getCustomer());
+            subscription.setStatus(SubscriptionStatus.ACTIVE);
+            subscription.setStartDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+            subscription.setEndDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+
+            subscriptionRepository.save(subscription);
+
+            payment.setSubscription(subscription);
+            payment.setStripePaymentIntent(paymentIntent);
         }
 
         paymentRepository.save(payment);
+
+        byte[] pdf = pdfInvoiceService.generateInvoice(payment);
+
+        String email = payment.getCarpenter().getEmail();
+        String name = payment.getCarpenter().getName();
+
+        String subject;
+        String html;
+
+        if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
+
+            subject = "Confirmación de suscripción - Blashape";
+
+            html = String.format("""
+        <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
+            <h2 style="color:#9117e4;">¡Suscripción activada!</h2>
+            <p>Hola <strong>%s</strong>,</p>
+            <p>Tu suscripción ha sido activada correctamente.</p>
+            <p>Adjunto encontrarás la factura de tu plan.</p>
+            <br/>
+            <p>Gracias por confiar en <strong>Blashape</strong>.</p>
+        </div>
+        """, name);
+
+        } else {
+
+            subject = "Factura de tu compra - Blashape";
+
+            html = String.format("""
+        <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
+            <h2 style="color:#9117e4;">Factura de tu compra</h2>
+            <p>Hola <strong>%s</strong>,</p>
+            <p>Tu pago ha sido procesado exitosamente.</p>
+            <p>Adjunto encontrarás tu factura.</p>
+            <br/>
+            <p>Gracias por usar <strong>Blashape</strong>.</p>
+        </div>
+        """, name);
+        }
+
+        emailService.sendEmailWithAttachment(
+                email,
+                subject,
+                html,
+                pdf,
+                "factura.pdf"
+        );
+
         log.info("Pago actualizado a PAID para paymentId: {}", paymentId);
     }
 }
