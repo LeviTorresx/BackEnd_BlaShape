@@ -30,4 +30,6 @@ public class Product {
 
     @Column(nullable = false)
     private String currency;
+
+    private String stripePriceId;
 }

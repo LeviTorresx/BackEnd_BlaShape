@@ -4,6 +4,8 @@ import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,6 +28,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;
 
+    @Enumerated(EnumType.STRING)
     private PaymentType paymentType;
 
     @ManyToOne
@@ -34,9 +37,12 @@ public class Payment {
 
     @ManyToOne
     @JoinColumn(name = "subscription_id")
-    private Subscription subscription;
+    private AppSubscription subscription;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "plan_id")
+    private Plan plan;
+
     private String description;
 
     @ManyToOne
@@ -53,9 +59,12 @@ public class Payment {
     @Column(nullable = false)
     private String currency;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

@@ -46,5 +46,5 @@ public class Carpenter extends User {
 
     @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
     @JsonManagedReference(value = "carpenter-subscription")
-    private List<Subscription> subscriptions;
+    private List<AppSubscription> subscriptions;
 }
