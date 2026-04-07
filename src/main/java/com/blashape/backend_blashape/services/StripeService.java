@@ -273,20 +273,43 @@ public class StripeService {
         String email = payment.getCarpenter().getEmail();
         String name = payment.getCarpenter().getName();
 
-        String html = String.format("""
+        String subject;
+        String html;
+
+        if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
+
+            subject = "Confirmación de suscripción - Blashape";
+
+            html = String.format("""
+        <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
+            <h2 style="color:#9117e4;">¡Suscripción activada!</h2>
+            <p>Hola <strong>%s</strong>,</p>
+            <p>Tu suscripción ha sido activada correctamente.</p>
+            <p>Adjunto encontrarás la factura de tu plan.</p>
+            <br/>
+            <p>Gracias por confiar en <strong>Blashape</strong>.</p>
+        </div>
+        """, name);
+
+        } else {
+
+            subject = "Factura de tu compra - Blashape";
+
+            html = String.format("""
         <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
             <h2 style="color:#9117e4;">Factura de tu compra</h2>
             <p>Hola <strong>%s</strong>,</p>
             <p>Tu pago ha sido procesado exitosamente.</p>
-            <p>Adjunto encontrarás tu factura en formato PDF.</p>
+            <p>Adjunto encontrarás tu factura.</p>
             <br/>
             <p>Gracias por usar <strong>Blashape</strong>.</p>
         </div>
         """, name);
+        }
 
         emailService.sendEmailWithAttachment(
                 email,
-                "Factura - Blashape",
+                subject,
                 html,
                 pdf,
                 "factura.pdf"

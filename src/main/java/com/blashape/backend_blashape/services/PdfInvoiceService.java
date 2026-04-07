@@ -1,13 +1,14 @@
 package com.blashape.backend_blashape.services;
 
 import java.io.ByteArrayOutputStream;
+import java.text.NumberFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 
 import com.blashape.backend_blashape.entitys.Payment;
-
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
 @Service
@@ -41,15 +42,42 @@ public class PdfInvoiceService {
 
         String logoUrl = "https://res.cloudinary.com/dr63i7owa/image/upload/v1773726191/logo_BS_uxob0a.png";
 
-        String productName = (payment.getProduct() != null)
-                ? payment.getProduct().getProductName()
-                : payment.getPlan().getPlanName();
+        String productName;
+        if (payment.getProduct() != null) {
+            productName = payment.getProduct().getProductName();
+        } else {
+            productName = "Plan " + payment.getPlan().getPlanName();
+        }
 
-        String currency = payment.getCurrency();
+        String paymentTypeLabel;
+        String subscriptionHtml = "";
+
+        if (payment.getProduct() != null) {
+            paymentTypeLabel = "Compra única";
+        } else {
+            paymentTypeLabel = "Suscripción";
+
+            if (payment.getSubscription() != null) {
+                String start = payment.getSubscription().getStartDate()
+                        .atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                String end = payment.getSubscription().getEndDate()
+                        .atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+                subscriptionHtml = String.format(
+                        "<p><strong>Periodo de suscripción:</strong> %s - %s</p>",
+                        start, end
+                );
+            }
+        }
 
         String date = payment.getCreatedAt()
                 .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        String formattedAmount = formatCOP(amount);
 
         return String.format("""
             <html>
@@ -73,6 +101,8 @@ public class PdfInvoiceService {
                         <p><strong>Cliente:</strong> %s</p>
                         <p><strong>Email:</strong> %s</p>
                         <p><strong>Factura ID:</strong> %s</p>
+                        <p><strong>Tipo de pago:</strong> %s</p>
+                        %s
                     </div>
 
                     <!-- TABLA -->
@@ -86,14 +116,14 @@ public class PdfInvoiceService {
                         <tbody>
                             <tr style="border-bottom:1px solid #ddd;">
                                 <td style="padding:12px;">%s</td>
-                                <td style="padding:12px; text-align:right;">%s %.2f</td>
+                                <td style="padding:12px; text-align:right;">%s</td>
                             </tr>
                         </tbody>
                     </table>
 
                     <!-- TOTAL -->
                     <div style="margin-top:30px; text-align:right;">
-                        <h2 style="color:#9117e4;">Total: %s %.2f</h2>
+                        <h2 style="color:#9117e4;">Total: %s</h2>
                     </div>
 
                     <hr style="margin:30px 0;"/>
@@ -114,9 +144,16 @@ public class PdfInvoiceService {
                 customerName,
                 email,
                 invoiceId,
+                paymentTypeLabel,
+                subscriptionHtml,
                 productName,
-                currency, amount,
-                currency, amount
+                formattedAmount,
+                formattedAmount
         );
+    }
+
+    private String formatCOP(double amount) {
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
+        return formatter.format(amount);
     }
 }
