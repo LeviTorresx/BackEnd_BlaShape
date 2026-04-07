@@ -15,9 +15,9 @@ public class CuttingService {
     private final GuillotineAlgorithm guillotineAlgorithm;
     private final PreviewGeneratorSVG previewGeneratorSVG;
 
-    public List<SheetPreviewDTO> generatePreviews(PreviewRequestDTO req) {
+    public List<SheetPreviewDTO> generatePreviews(PreviewRequestDTO req, String plan) {
 
-        RenderOptions opts = RenderOptions.resolveOptions(req.getPlan());
+        RenderOptions opts = RenderOptions.resolveOptions(plan);
         List<SheetPreviewDTO> result = new ArrayList<>();
 
         for (PreviewGroupDTO group : req.getGroups()) {

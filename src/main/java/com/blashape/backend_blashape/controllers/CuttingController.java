@@ -26,7 +26,8 @@ public class CuttingController {
     @PostMapping(value = "/cutting_plan/preview_svgs")
     public ResponseEntity<List<SheetPreviewDTO>> generatePreviews(
             @Valid @RequestBody PreviewRequestDTO req) {
-        return ResponseEntity.ok(cuttingService.generatePreviews(req));
+        String plan = "FREE";
+        return ResponseEntity.ok(cuttingService.generatePreviews(req, plan));
     }
 
     // none
