@@ -15,6 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentDTO {
+    private Long paymentId;
     private PaymentType paymentType;
     private ProductDTO product;
     private SubscriptionDTO subscription;

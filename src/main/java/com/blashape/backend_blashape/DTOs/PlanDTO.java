@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlanDTO {
+    private Long planId;
     private String planName;
     private String description;
     private String interval;

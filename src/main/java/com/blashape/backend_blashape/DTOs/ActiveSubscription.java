@@ -14,6 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActiveSubscription {
+    private Long subscriptionId;
     private PlanDTO plan;
     private SubscriptionStatus status;
     private Instant startDate;

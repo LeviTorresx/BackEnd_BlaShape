@@ -14,6 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionDTO {
+    private Long subscriptionId;
     private CarpenterDTO carpenter;
     private PlanDTO plan;
     private String stripeSubscriptionId;
