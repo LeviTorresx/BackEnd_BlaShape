@@ -11,4 +11,5 @@ public class PreviewRequestDTO {
     @NotEmpty(message = "Debe incluir al menos un grupo")
     @Valid
     private List<PreviewGroupDTO> groups;
+    private String plan;
 }
