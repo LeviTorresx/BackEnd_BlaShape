@@ -187,6 +187,12 @@ public class StripeService {
                 payment.setAmount(product.getPrice());
                 payment.setCurrency(product.getCurrency());
         } else if (PaymentType.SUBSCRIPTION.equals(paymentType)) {
+                Boolean hasActiveSubscription = subscriptionRepository.existsByCarpenter_CarpenterIdAndStatus(carpenterId, SubscriptionStatus.ACTIVE);
+
+                if (hasActiveSubscription) {
+                        throw new RuntimeException("El carpintero ya tiene una suscripción activa");
+                }
+
                 Plan plan = planRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Plan no encontrado con ID: " + id));
 

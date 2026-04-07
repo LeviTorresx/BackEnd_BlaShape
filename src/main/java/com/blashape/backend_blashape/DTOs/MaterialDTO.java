@@ -13,6 +13,6 @@ import java.util.List;
 public class MaterialDTO {
     private Long materialId;
     private String name;
-    private List<ColorDTO> colors;
-    private List<Double> thickness;
+    private ColorDTO color;
+    private Double thickness;
 }

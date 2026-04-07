@@ -13,12 +13,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubscriptionDTO {
+public class ActiveSubscription {
     private Long subscriptionId;
-    private CarpenterDTO carpenter;
     private PlanDTO plan;
-    private String stripeSubscriptionId;
-    private String stripeCustomerId;
     private SubscriptionStatus status;
     private Instant startDate;
     private Instant endDate;

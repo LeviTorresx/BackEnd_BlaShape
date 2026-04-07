@@ -22,37 +22,75 @@ import java.util.Map;
 
 @Service
 public class PdfReportService {
-    private static final DeviceRgb VIOLETA_OSCURO = new DeviceRgb(0x2e, 0x1a, 0x47); // profundo
-    private static final DeviceRgb VIOLETA_MEDIO = new DeviceRgb(0x6d, 0x3f, 0xa8); // principal
-    private static final DeviceRgb VIOLETA_CLARO = new DeviceRgb(0xf3, 0xe8, 0xff); // fondo suave
 
-    private static final DeviceRgb MORADO_ACENTO = new DeviceRgb(0x8e, 0x44, 0xad); // alternativa más intensa // acento moderno (más vivo)
-    private static final DeviceRgb GRIS_CLARO   = new DeviceRgb(0xf5, 0xf5, 0xf3);
-    private static final DeviceRgb GRIS_BORDE   = new DeviceRgb(0xcc, 0xcb, 0xc5);
-    private static final DeviceRgb ROJO_TAPAC   = new DeviceRgb(0xe7, 0x4c, 0x3c);
+    private static final DeviceRgb VIOLETA_OSCURO = new DeviceRgb(0x2e, 0x1a, 0x47);
+    private static final DeviceRgb VIOLETA_MEDIO  = new DeviceRgb(0x6d, 0x3f, 0xa8);
+    private static final DeviceRgb VIOLETA_CLARO  = new DeviceRgb(0xf3, 0xe8, 0xff);
+    private static final DeviceRgb MORADO_ACENTO  = new DeviceRgb(0x8e, 0x44, 0xad);
+    private static final DeviceRgb GRIS_CLARO     = new DeviceRgb(0xf5, 0xf5, 0xf3);
+    private static final DeviceRgb GRIS_BORDE     = new DeviceRgb(0xcc, 0xcb, 0xc5);
+    private static final DeviceRgb ROJO_TAPAC     = new DeviceRgb(0xe7, 0x4c, 0x3c);
+    private static final DeviceRgb PIEZA_FILL     = new DeviceRgb(0xd6, 0xc2, 0xf0);
+    private static final DeviceRgb PIEZA_ROT      = new DeviceRgb(0xe0, 0xd4, 0xf7);
+    private static final DeviceRgb PIEZA_BORDE    = new DeviceRgb(0x3d, 0x2c, 0x5a);
 
-    private static final DeviceRgb PIEZA_FILL   = new DeviceRgb(0xd6, 0xc2, 0xf0); // violeta suave
-    private static final DeviceRgb PIEZA_ROT    = new DeviceRgb(0xe0, 0xd4, 0xf7); // aún más claro
-    private static final DeviceRgb PIEZA_BORDE  = new DeviceRgb(0x3d, 0x2c, 0x5a); // borde oscuro
+    // ── API pública ───────────────────────────────────────────────────────────
 
-    /**
-            * Genera el PDF completo y lo devuelve como array de bytes.
-     *
-     * @param resultado   resultado de la optimizacion
-     * @param tapacanto   resumen de tapacanto calculado
-     * @param proyecto    nombre del proyecto (puede ser null)
-     * @return bytes del PDF
-     */
+    /** Genera con opciones por defecto. */
+    public byte[] generate(CuttingResult result,
+                           BandingService.BandingSummary banding,
+                           String proyecto) throws IOException {
+        return generate(result, banding, proyecto, RenderOptions.freePlan());
+    }
+
+    /** Genera respetando el plan del usuario. */
+    public byte[] generate(CuttingResult result,
+                           BandingService.BandingSummary banding,
+                           String proyecto,
+                           RenderOptions opts) throws IOException {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter   writer = new PdfWriter(baos);
+        PdfDocument pdf    = new PdfDocument(writer);
+        Document    doc    = new Document(pdf, PageSize.A4);
+        doc.setMargins(0, 0, 0, 0);
+
+        PdfFont fontR = PdfFontFactory.createFont("Helvetica");
+        PdfFont fontB = PdfFontFactory.createFont("Helvetica-Bold");
+
+        String nombre = (proyecto != null && !proyecto.isBlank())
+                ? proyecto : "Plan de Corte CNC";
+
+        // Página 1: portada (siempre)
+        drawCover(pdf.addNewPage(PageSize.A4), result, banding, nombre, fontR, fontB, opts);
+
+        // Página 2: lista de piezas (según plan)
+        if (opts.isShowPieceList()) {
+            drawPieceList(pdf.addNewPage(PageSize.A4), result, banding, fontR, fontB);
+        }
+
+        // Páginas de planos
+        int planoNum = 1;
+        int total    = result.getSheets().size();
+        for (CuttingSheet plano : result.getSheets()) {
+            drawCutting(pdf.addNewPage(PageSize.A4.rotate()),
+                    plano, planoNum++, total, fontR, fontB, opts);
+        }
+
+        doc.close();
+        return baos.toByteArray();
+    }
+
+    // ── Helpers compartidos ───────────────────────────────────────────────────
 
     private void drawHeaderSeccion(PdfCanvas canvas, float W, float H,
-                                          String titulo, PdfFont fontR, PdfFont fontB) {
-        canvas.setFillColor(VIOLETA_OSCURO)
-                .rectangle(0, H - 50, W, 50).fill();
-        canvas.setFillColor(MORADO_ACENTO)
-                .rectangle(0, H - 53, W, 3).fill();
+                                   String titulo, PdfFont fontR, PdfFont fontB) {
+        canvas.setFillColor(VIOLETA_OSCURO).rectangle(0, H - 50, W, 50).fill();
+        canvas.setFillColor(MORADO_ACENTO).rectangle(0, H - 53, W, 3).fill();
         canvas.beginText().setFontAndSize(fontB, 16).setFillColor(ColorConstants.WHITE)
                 .moveText(40, H - 32).showText(titulo).endText();
-        canvas.beginText().setFontAndSize(fontR, 9).setFillColor(new DeviceRgb(0xb5,0xd4,0xf4))
+        canvas.beginText().setFontAndSize(fontR, 9)
+                .setFillColor(new DeviceRgb(0xb5, 0xd4, 0xf4))
                 .moveText(40, H - 44).showText("Blashape  |  Plan de Corte").endText();
     }
 
@@ -62,58 +100,75 @@ public class PdfReportService {
         canvas.setStrokeColor(GRIS_BORDE).setLineWidth(0.5f)
                 .moveTo(40, 22).lineTo(W - 40, 22).stroke();
         canvas.beginText().setFontAndSize(fontR, 8)
-                .setFillColor(new DeviceRgb(0x88,0x87,0x80))
+                .setFillColor(new DeviceRgb(0x88, 0x87, 0x80))
                 .moveText(40, 10).showText("Blashape  |  " + seccion).endText();
         String pagTxt = totalPage > 0
                 ? "Pagina " + numPage + " de " + totalPage
                 : "Pagina " + numPage;
         canvas.beginText().setFontAndSize(fontR, 8)
-                .setFillColor(new DeviceRgb(0x88,0x87,0x80))
+                .setFillColor(new DeviceRgb(0x88, 0x87, 0x80))
                 .moveText(W - 80, 10).showText(pagTxt).endText();
     }
 
-    private static class SummaryPiece {
-        final Piece piece;
-        int quantity  = 0;
-        int rotated   = 0;
+    /** Marca de agua diagonal sobre toda la página PDF. */
+    private void drawPdfWatermark(PdfCanvas canvas, float W, float H,
+                                  String text, PdfFont fontB) throws IOException {
+        // Crear el estado gráfico con opacidad ANTES de dibujar
+        com.itextpdf.kernel.pdf.extgstate.PdfExtGState gs =
+                new com.itextpdf.kernel.pdf.extgstate.PdfExtGState();
+        gs.setFillOpacity(0.07f); // ← ajusta aquí: 0.05 muy tenue, 0.15 más visible
 
-        SummaryPiece(Piece piece) { this.piece = piece; }
+        canvas.saveState();
+        canvas.setExtGState(gs); // ← aplicar ANTES de dibujar el texto
+        canvas.setFillColor(new DeviceRgb(0xc0, 0x39, 0x2b));
 
-        void increment(boolean isRotated) {
-            quantity++;
-            if (isRotated) rotated++;
+        float fs = 42f;
+        float stepX = 220f, stepY = 130f;
+
+        for (float y = 0; y < H + stepY; y += stepY) {
+            for (float x = -100; x < W + stepX; x += stepX) {
+                canvas.saveState();
+                canvas.concatMatrix(
+                        Math.cos(Math.toRadians(-35)), Math.sin(Math.toRadians(-35)),
+                        -Math.sin(Math.toRadians(-35)), Math.cos(Math.toRadians(-35)),
+                        x, y);
+                canvas.beginText()
+                        .setFontAndSize(fontB, fs)
+                        .setFillColor(new DeviceRgb(0xc0, 0x39, 0x2b))
+                        .moveText(0, 0)
+                        .showText(text)
+                        .endText();
+                canvas.restoreState();
+            }
         }
+
+        canvas.restoreState(); // restaura el estado gráfico (opacidad vuelve a 1)
     }
 
+    // ── Portada ───────────────────────────────────────────────────────────────
+
     private void drawCover(PdfPage page,
-                                CuttingResult result,
-                                BandingService.BandingSummary banding,
-                                String proyect,
-                                PdfFont fontR, PdfFont fontB) {
+                           CuttingResult result,
+                           BandingService.BandingSummary banding,
+                           String proyect,
+                           PdfFont fontR, PdfFont fontB,
+                           RenderOptions opts) throws IOException {
         PdfCanvas canvas = new PdfCanvas(page);
         float W = page.getPageSize().getWidth();
         float H = page.getPageSize().getHeight();
 
-        // Bloque superior azul oscuro (40% de la pagina)
         float sectionH = H * 0.42f;
         canvas.setFillColor(VIOLETA_OSCURO)
-                .rectangle(0, H - sectionH, W, sectionH)
-                .fill();
-
-        // Franja de acento verde
+                .rectangle(0, H - sectionH, W, sectionH).fill();
         canvas.setFillColor(MORADO_ACENTO)
-                .rectangle(0, H - sectionH - 6, W, 6)
-                .fill();
+                .rectangle(0, H - sectionH - 6, W, 6).fill();
 
-        // Decoracion geometrica — lineas diagonales sutiles en el bloque
-        canvas.setStrokeColor(new DeviceRgb(0x2e, 0x4a, 0x7a))
-                .setLineWidth(0.5f);
+        canvas.setStrokeColor(new DeviceRgb(0x2e, 0x4a, 0x7a)).setLineWidth(0.5f);
         for (int i = 0; i < 8; i++) {
             float xStart = W * 0.55f + i * 35;
             canvas.moveTo(xStart, H).lineTo(xStart + 80, H - sectionH).stroke();
         }
 
-        // Logo / icono CNC (rectangulos simbolicos de corte)
         float iconX = 52, iconY = H - sectionH + sectionH * 0.45f;
         canvas.setFillColor(MORADO_ACENTO)
                 .rectangle(iconX,      iconY,      60, 4).fill()
@@ -121,33 +176,21 @@ public class PdfReportService {
                 .rectangle(iconX,      iconY + 20, 50, 4).fill()
                 .rectangle(iconX + 65, iconY,       4, 28).fill();
 
-        // Titulo principal
-        canvas.beginText()
-                .setFontAndSize(fontB, 28)
-                .setFillColor(ColorConstants.WHITE)
-                .moveText(52, H - sectionH + sectionH * 0.35f)
-                .showText(proyect)
-                .endText();
-
-        // Subtitulo
-        canvas.beginText()
-                .setFontAndSize(fontR, 13)
+        canvas.beginText().setFontAndSize(fontB, 28).setFillColor(ColorConstants.WHITE)
+                .moveText(52, H - sectionH + sectionH * 0.35f).showText(proyect).endText();
+        canvas.beginText().setFontAndSize(fontR, 13)
                 .setFillColor(new DeviceRgb(0xb5, 0xd4, 0xf4))
                 .moveText(52, H - sectionH + sectionH * 0.22f)
-                .showText("Plan de Corte  |  Blashape ")
-                .endText();
+                .showText("Plan de Corte  |  Blashape").endText();
 
-        // Fecha y hora
         String fecha = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy  HH:mm"));
-        canvas.beginText()
-                .setFontAndSize(fontR, 10)
+        canvas.beginText().setFontAndSize(fontR, 10)
                 .setFillColor(new DeviceRgb(0x85, 0xb7, 0xeb))
                 .moveText(52, H - sectionH + sectionH * 0.10f)
-                .showText("Generado: " + fecha)
-                .endText();
+                .showText("Generado: " + fecha).endText();
 
-        // ── Tarjetas de metricas (4 columnas) ─────────────────────────────
+        // Tarjetas de métricas
         float cardY   = H - sectionH - 130;
         float cardW   = (W - 104) / 4f;
         float cardH   = 90;
@@ -164,41 +207,23 @@ public class PdfReportService {
 
         for (int i = 0; i < 4; i++) {
             float cx = 52 + i * (cardW + cardGap);
-            // Sombra/fondo tarjeta
             canvas.setFillColor(GRIS_CLARO)
-                    .roundRectangle(cx, cardY - cardH, cardW, cardH, 8)
-                    .fill();
+                    .roundRectangle(cx, cardY - cardH, cardW, cardH, 8).fill();
             canvas.setStrokeColor(GRIS_BORDE).setLineWidth(0.5f)
-                    .roundRectangle(cx, cardY - cardH, cardW, cardH, 8)
-                    .stroke();
-            // Borde superior de color
+                    .roundRectangle(cx, cardY - cardH, cardW, cardH, 8).stroke();
             canvas.setFillColor(accents[i])
-                    .rectangle(cx, cardY - 4, cardW, 4)
-                    .fill();
-            // Valor grande
-            canvas.beginText()
-                    .setFontAndSize(fontB, 22)
-                    .setFillColor(VIOLETA_OSCURO)
-                    .moveText(cx + 14, cardY - 38)
-                    .showText(values[i])
-                    .endText();
-            // Etiqueta
-            canvas.beginText()
-                    .setFontAndSize(fontR, 9)
+                    .rectangle(cx, cardY - 4, cardW, 4).fill();
+            canvas.beginText().setFontAndSize(fontB, 22).setFillColor(VIOLETA_OSCURO)
+                    .moveText(cx + 14, cardY - 38).showText(values[i]).endText();
+            canvas.beginText().setFontAndSize(fontR, 9)
                     .setFillColor(new DeviceRgb(0x88, 0x87, 0x80))
-                    .moveText(cx + 14, cardY - 55)
-                    .showText(labels[i])
-                    .endText();
+                    .moveText(cx + 14, cardY - 55).showText(labels[i]).endText();
         }
+
         float detY = cardY - cardH - 40;
-        canvas.beginText()
-                .setFontAndSize(fontB, 11)
-                .setFillColor(VIOLETA_OSCURO)
-                .moveText(52, detY)
-                .showText("Detalle de tapacanto")
-                .endText();
-        canvas.setFillColor(MORADO_ACENTO)
-                .rectangle(52, detY - 4, 32, 2).fill();
+        canvas.beginText().setFontAndSize(fontB, 11).setFillColor(VIOLETA_OSCURO)
+                .moveText(52, detY).showText("Detalle de tapacanto").endText();
+        canvas.setFillColor(MORADO_ACENTO).rectangle(52, detY - 4, 32, 2).fill();
 
         float rowY = detY - 22;
         String[] tapRows = {
@@ -212,10 +237,8 @@ public class PdfReportService {
             rowY -= 16;
         }
 
-        // ── Resumen de tablero ─────────────────────────────────────────────
         if (!result.getSheets().isEmpty()) {
             Sheet t = result.getSheets().get(0).getSheet();
-            float rY = detY - 22;
             assert t.getMaterial() != null;
             String[] infoRows = {
                     "Material:  " + t.getMaterial(),
@@ -237,24 +260,35 @@ public class PdfReportService {
             }
         }
 
-        // ── Pie de pagina ──────────────────────────────────────────────────
+        // Marca de agua encima de todo al final
+        if (opts.isPdfWatermark()) {
+            drawPdfWatermark(canvas, W, H, opts.getPdfWatermarkText(), fontB);
+        }
+
         drawFooter(canvas, page, fontR, 1, -1, "Portada");
     }
 
+    // ── Lista de piezas ───────────────────────────────────────────────────────
+
+    private static class SummaryPiece {
+        final Piece piece;
+        int quantity = 0;
+        int rotated  = 0;
+        SummaryPiece(Piece p) { this.piece = p; }
+        void increment(boolean r) { quantity++; if (r) rotated++; }
+    }
+
     private void drawPieceList(PdfPage page,
-                                    CuttingResult result,
-                                    BandingService.BandingSummary banding,
-                                    PdfFont fontR, PdfFont fontB) {
+                               CuttingResult result,
+                               BandingService.BandingSummary banding,
+                               PdfFont fontR, PdfFont fontB) {
         PdfCanvas canvas = new PdfCanvas(page);
         float W = page.getPageSize().getWidth();
         float H = page.getPageSize().getHeight();
 
         drawHeaderSeccion(canvas, W, H, "Lista de piezas", fontR, fontB);
 
-        // Construir mapa pieza -> ml tapacanto
         Map<String, Double> mlPorPieza = banding.toMlPiece();
-
-        // Consolidar piezas por nombre
         Map<String, SummaryPiece> resumen = new LinkedHashMap<>();
         for (CuttingSheet sheet : result.getSheets()) {
             for (CuttingPosition c : sheet.getCuts()) {
@@ -264,22 +298,19 @@ public class PdfReportService {
             }
         }
 
-        // Encabezado tabla
         float tableY = H - 90;
         float[] colX  = {40, 160, 210, 265, 315, 365, 420, 480, 530};
         String[] heads = {"Pieza", "Ancho", "Largo", "Cant.", "T.A1", "T.A2", "T.L1", "T.L2", "Tapacanto ml"};
 
         canvas.setFillColor(VIOLETA_OSCURO)
-                .rectangle(40, tableY - 18, W - 80, 20)
-                .fill();
+                .rectangle(40, tableY - 18, W - 80, 20).fill();
         for (int i = 0; i < heads.length; i++) {
             canvas.beginText().setFontAndSize(fontB, 9).setFillColor(ColorConstants.WHITE)
                     .moveText(colX[i], tableY - 12).showText(heads[i]).endText();
         }
 
-        // Filas
-        float rowH  = 16f;
-        float rowY  = tableY - 20;
+        float rowH = 16f;
+        float rowY = tableY - 20;
         boolean alt = false;
         for (Map.Entry<String, SummaryPiece> entry : resumen.entrySet()) {
             SummaryPiece pr = entry.getValue();
@@ -297,48 +328,39 @@ public class PdfReportService {
                     (int)p.getWidth() + " mm",
                     (int)p.getHeight() + " mm",
                     String.valueOf(pr.quantity),
-                    p.getEdges().getTop() ? "SI" : "-",
+                    p.getEdges().getTop()    ? "SI" : "-",
                     p.getEdges().getBottom() ? "SI" : "-",
-                    p.getEdges().getLeft() ? "SI" : "-",
-                    p.getEdges().getRight() ? "SI" : "-",
+                    p.getEdges().getLeft()   ? "SI" : "-",
+                    p.getEdges().getRight()  ? "SI" : "-",
                     String.format("%.2f", ml)
             };
 
             for (int i = 0; i < cells.length; i++) {
                 boolean esTap = i >= 4 && i <= 7 && cells[i].equals("SI");
-                canvas.beginText()
-                        .setFontAndSize(fontR, 9)
+                canvas.beginText().setFontAndSize(fontR, 9)
                         .setFillColor(esTap ? MORADO_ACENTO : VIOLETA_OSCURO)
-                        .moveText(colX[i], rowY - 8)
-                        .showText(cells[i])
-                        .endText();
+                        .moveText(colX[i], rowY - 8).showText(cells[i]).endText();
             }
 
             canvas.setStrokeColor(GRIS_BORDE).setLineWidth(0.3f)
                     .moveTo(40, rowY - rowH + 3).lineTo(W - 40, rowY - rowH + 3).stroke();
-
             rowY -= rowH;
             alt = !alt;
         }
 
-        // Totales
         rowY -= 8;
-        canvas.setFillColor(VIOLETA_OSCURO)
-                .rectangle(40, rowY - 16, W - 80, 18).fill();
+        canvas.setFillColor(VIOLETA_OSCURO).rectangle(40, rowY - 16, W - 80, 18).fill();
         canvas.beginText().setFontAndSize(fontB, 9).setFillColor(ColorConstants.WHITE)
                 .moveText(colX[0], rowY - 8)
-                .showText("TOTAL  —  " + result.getTotalPiecesLocated() + " piezas ubicadas")
-                .endText();
-        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(MORADO_ACENTO)
+                .showText("TOTAL  —  " + result.getTotalPiecesLocated() + " piezas ubicadas").endText();
+        canvas.beginText().setFontAndSize(fontB, 9).setFillColor(ColorConstants.WHITE)
                 .moveText(colX[8], rowY - 8)
-                .showText(String.format("%.2f ml", banding.totalMlGeneral()))
-                .endText();
+                .showText(String.format("%.2f ml", banding.totalMlGeneral())).endText();
 
-        // Leyenda tapacanto
         float leyY = rowY - 40;
         canvas.beginText().setFontAndSize(fontB, 9).setFillColor(VIOLETA_OSCURO)
                 .moveText(40, leyY).showText("Leyenda tapacanto:").endText();
-        canvas.beginText().setFontAndSize(fontR, 8).setFillColor(new DeviceRgb(0x44,0x44,0x41))
+        canvas.beginText().setFontAndSize(fontR, 8).setFillColor(new DeviceRgb(0x44, 0x44, 0x41))
                 .moveText(40, leyY - 14)
                 .showText("T.A1 = Cara ancho frontal  |  T.A2 = Cara ancho trasera  |  T.L1 = Cara largo izquierda  |  T.L2 = Cara largo derecha")
                 .endText();
@@ -346,165 +368,209 @@ public class PdfReportService {
         drawFooter(canvas, page, fontR, 2, -1, "Lista de piezas");
     }
 
-    // ─── Pagina de plano de corte ─────────────────────────────────────────────
+    /**
+     * Un corte vertical en X es guillotina real si ninguna pieza lo cruza,
+     * es decir, ninguna pieza tiene su inicio antes de X y su fin después de X.
+     */
+    private boolean esCorteVerticalCompleto(CuttingSheet sheet, float x, float tol) {
+        double xD   = x;
+        double tolD = tol;
+        for (CuttingPosition c : sheet.getCuts()) {
+            double inicio = c.getX();
+            double fin    = c.getX() + c.getEffectiveWidth();
+            if (inicio < xD - tolD && fin > xD + tolD) return false;
+        }
+        return true;
+    }
+
+    private boolean esCorteHorizontalCompleto(CuttingSheet sheet, float y, float tol) {
+        double yD   = y;
+        double tolD = tol;
+        for (CuttingPosition c : sheet.getCuts()) {
+            double inicio = c.getY();
+            double fin    = c.getY() + c.getEffectiveHeight();
+            if (inicio < yD - tolD && fin > yD + tolD) return false;
+        }
+        return true;
+    }
+
+    // ── Plano de corte ────────────────────────────────────────────────────────
 
     private void drawCutting(PdfPage page, CuttingSheet sheet,
-                                       int numSheet, int totalSheets,
-                                       PdfFont fontR, PdfFont fontB) {
+                             int numSheet, int totalSheets,
+                             PdfFont fontR, PdfFont fontB,
+                             RenderOptions opts) throws IOException {
         PdfCanvas canvas = new PdfCanvas(page);
-        float W = page.getPageSize().getWidth();  // A4 apaisado = 841.89
-        float H = page.getPageSize().getHeight(); // 595.28
+        float W = page.getPageSize().getWidth();
+        float H = page.getPageSize().getHeight();
 
-        float headerH = 50f;
-        float footerH = 30f;
-        float margin   = 30f;
+        float headerH = 50f, footerH = 30f, margin = 30f;
 
-        // ── Encabezado ──────────────────────────────────────────────────────
-        canvas.setFillColor(VIOLETA_OSCURO)
-                .rectangle(0, H - headerH, W, headerH).fill();
-        canvas.setFillColor(MORADO_ACENTO)
-                .rectangle(0, H - headerH - 3, W, 3).fill();
-
+        // Encabezado
+        canvas.setFillColor(VIOLETA_OSCURO).rectangle(0, H - headerH, W, headerH).fill();
+        canvas.setFillColor(MORADO_ACENTO).rectangle(0, H - headerH - 3, W, 3).fill();
         canvas.beginText().setFontAndSize(fontB, 14).setFillColor(ColorConstants.WHITE)
                 .moveText(margin, H - 28)
-                .showText("Plano de corte " + numSheet + " / " + totalSheets)
-                .endText();
+                .showText("Plano de corte " + numSheet + " / " + totalSheets).endText();
 
-        Sheet t = sheet.getSheet();
+        Sheet t   = sheet.getSheet();
         String mat = t.getMaterial() == null ? "" : t.getMaterial().getName();
         String info = mat + "  " + (int)t.getWidth() + "x" + (int)t.getHeight() + " mm  |  "
                 + sheet.getCuts().size() + " piezas  |  "
                 + String.format("%.1f%% aprovechado", sheet.getPercentageUtilized());
-
-        canvas.beginText().setFontAndSize(fontR, 9).setFillColor(new DeviceRgb(0xb5,0xd4,0xf4))
+        canvas.beginText().setFontAndSize(fontR, 9)
+                .setFillColor(new DeviceRgb(0xb5, 0xd4, 0xf4))
                 .moveText(margin, H - 42).showText(info).endText();
 
-        // ── Area de dibujo del tablero ────────────────────────────────────
-        float drawX = margin;
-        float drawY = footerH + 10;
+        // Área de dibujo
+        float drawX = margin, drawY = footerH + 10;
         float drawW = W - margin * 2;
         float drawH = H - headerH - footerH - 20;
 
-        // Calcular escala para que el tablero quepa en el area de dibujo
         double escalaX = drawW / t.getWidth();
         double escalaY = drawH / t.getHeight();
         double escala  = Math.min(escalaX, escalaY);
 
-        float tw = (float)(t.getWidth() * escala);
+        float tw = (float)(t.getWidth()  * escala);
         float th = (float)(t.getHeight() * escala);
-
-        // Centrar el tablero en el area de dibujo
         float offsetX = drawX + (drawW - tw) / 2f;
         float offsetY = drawY + (drawH - th) / 2f;
 
-        // Fondo del tablero
+        // Fondo tablero
         canvas.setFillColor(new DeviceRgb(0xf5, 0xf0, 0xe8))
                 .rectangle(offsetX, offsetY, tw, th).fill();
         canvas.setStrokeColor(PIEZA_BORDE).setLineWidth(1.5f)
                 .rectangle(offsetX, offsetY, tw, th).stroke();
 
-        // Cuadricula de referencia sutil
-        canvas.setStrokeColor(GRIS_BORDE).setLineWidth(0.2f);
-        float gridStep = (float)(200 * escala);
-        if (gridStep > 10) {
-            for (float gx = gridStep; gx < tw; gx += gridStep) {
-                canvas.moveTo(offsetX + gx, offsetY)
-                        .lineTo(offsetX + gx, offsetY + th).stroke();
-            }
-            for (float gy = gridStep; gy < th; gy += gridStep) {
-                canvas.moveTo(offsetX,      offsetY + gy)
-                        .lineTo(offsetX + tw, offsetY + gy).stroke();
+        // Cuadrícula (según plan)
+        if (opts.isShowGrid()) {
+            canvas.setStrokeColor(GRIS_BORDE).setLineWidth(0.2f);
+            float gridStep = (float)(200 * escala);
+            if (gridStep > 10) {
+                for (float gx = gridStep; gx < tw; gx += gridStep)
+                    canvas.moveTo(offsetX + gx, offsetY)
+                            .lineTo(offsetX + gx, offsetY + th).stroke();
+                for (float gy = gridStep; gy < th; gy += gridStep)
+                    canvas.moveTo(offsetX, offsetY + gy)
+                            .lineTo(offsetX + tw, offsetY + gy).stroke();
             }
         }
 
-        // ── Paso 1: relleno de piezas (capa base) ────────────────────────
+        // Paso 1: relleno de piezas
         for (CuttingPosition c : sheet.getCuts()) {
             float px = offsetX + (float)(c.getX()            * escala);
             float py = offsetY + (float)(c.getY()            * escala);
-            float pw = (float)(c.getEffectiveWidth() * escala);
+            float pw = (float)(c.getEffectiveWidth()  * escala);
             float ph = (float)(c.getEffectiveHeight() * escala);
-            DeviceRgb fill = c.isRotated() ? PIEZA_ROT : PIEZA_FILL;
-            canvas.setFillColor(fill).rectangle(px, py, pw, ph).fill();
+            canvas.setFillColor(c.isRotated() ? PIEZA_ROT : PIEZA_FILL)
+                    .rectangle(px, py, pw, ph).fill();
         }
 
-        // ── Paso 2: lineas de corte guillotina (atraviesan el tablero) ────
-        // Recopilar todas las coordenadas X e Y de los bordes de piezas
-        java.util.Set<Float> cortesX = new java.util.TreeSet<>();
-        java.util.Set<Float> cortesY = new java.util.TreeSet<>();
-        for (CuttingPosition c : sheet.getCuts()) {
-            float px = (float)(c.getX()            * escala);
-            float py = (float)(c.getY()            * escala);
-            float pw = (float)(c.getEffectiveWidth() * escala);
-            float ph = (float)(c.getEffectiveHeight() * escala);
-            cortesX.add(px); cortesX.add(px + pw);
-            cortesY.add(py); cortesY.add(py + ph);
-        }
-        // Lineas verticales de corte (excepto bordes del tablero)
-        canvas.setStrokeColor(new DeviceRgb(0x0a, 0x84, 0xff)).setLineWidth(0.6f);
-        float[] dashV = {4f, 3f};
-        canvas.setLineDash(dashV, 0);
-        for (float cx : cortesX) {
-            if (cx > 1 && cx < tw - 1) {
-                canvas.moveTo(offsetX + cx, offsetY)
-                        .lineTo(offsetX + cx, offsetY + th).stroke();
-            }
-        }
-        // Lineas horizontales de corte
-        for (float cy : cortesY) {
-            if (cy > 1 && cy < th - 1) {
-                canvas.moveTo(offsetX,      offsetY + cy)
-                        .lineTo(offsetX + tw, offsetY + cy).stroke();
-            }
-        }
-        canvas.setLineDash(new float[]{}, 0); // resetear dash
+        // Paso 2: líneas guillotina (según plan)
+        // Paso 2: líneas guillotina (solo las que atraviesan el tablero completo)
+        if (opts.isShowCutLines()) {
+            java.util.Set<Float> cortesX = new java.util.TreeSet<>();
+            java.util.Set<Float> cortesY = new java.util.TreeSet<>();
 
-        // ── Paso 3: contorno de corte por pieza + kerf + flecha inicio ────
-        int orden = 1;
+            for (CuttingPosition c : sheet.getCuts()) {
+                float px = (float)(c.getX()             * escala);
+                float py = (float)(c.getY()             * escala);
+                float pw = (float)(c.getEffectiveWidth() * escala);
+                float ph = (float)(c.getEffectiveHeight()* escala);
+                cortesX.add(px); cortesX.add(px + pw);
+                cortesY.add(py); cortesY.add(py + ph);
+            }
+
+            // Tolerancia: cuántos px puede faltar para considerarse "que atraviesa"
+            float tolerancia = (float)(5 * escala); // 5mm en escala
+
+            canvas.setStrokeColor(new DeviceRgb(0x0a, 0x84, 0xff)).setLineWidth(0.6f)
+                    .setLineDash(new float[]{4f, 3f}, 0);
+
+            for (float cx : cortesX) {
+                if (cx <= 1 || cx >= tw - 1) continue; // ignorar bordes del tablero
+
+                // Verificar que ninguna pieza "interrumpe" esta línea vertical
+                // Es decir, que no haya piezas a ambos lados sin un corte que las separe
+                if (esCorteVerticalCompleto(sheet, cx / (float) escala, (float)(5.0 / escala))) {
+                    canvas.moveTo(offsetX + cx, offsetY)
+                            .lineTo(offsetX + cx, offsetY + th).stroke();
+                }
+            }
+
+            for (float cy : cortesY) {
+                if (cy <= 1 || cy >= th - 1) continue;
+
+                if (esCorteHorizontalCompleto(sheet, cy / (float) escala, (float)(5.0 / escala))) {
+                    canvas.moveTo(offsetX, offsetY + cy)
+                            .lineTo(offsetX + tw, offsetY + cy).stroke();
+                }
+            }
+
+            canvas.setLineDash(new float[]{}, 0);
+        }
+
+        // Paso 3: contorno kerf + flecha inicio (según plan)
         for (CuttingPosition c : sheet.getCuts()) {
             float px = offsetX + (float)(c.getX()            * escala);
             float py = offsetY + (float)(c.getY()            * escala);
-            float pw = (float)(c.getEffectiveWidth() * escala);
+            float pw = (float)(c.getEffectiveWidth()  * escala);
             float ph = (float)(c.getEffectiveHeight() * escala);
 
-            // Kerf (ancho de sierra ~3mm → escala a px)
-            float kerf = Math.max(0.8f, (float)(3.0 * escala));
+            if (opts.isShowKerfContour()) {
+                float kerf  = Math.max(0.8f, (float)(3.0 * escala));
+                float inset = kerf / 2f;
+                canvas.setStrokeColor(new DeviceRgb(0xe6, 0x7e, 0x22)).setLineWidth(kerf);
+                canvas.moveTo(px + inset,      py + inset)
+                        .lineTo(px + pw - inset, py + inset)
+                        .lineTo(px + pw - inset, py + ph - inset)
+                        .lineTo(px + inset,      py + ph - inset)
+                        .closePath().stroke();
+            }
 
-            // Contorno de corte: linea solida naranja, ligeramente dentro del borde
-            float inset = kerf / 2f;
-            canvas.setStrokeColor(new DeviceRgb(0xe6, 0x7e, 0x22)).setLineWidth(kerf);
-            canvas.moveTo(px + inset,      py + inset)
-                    .lineTo(px + pw - inset, py + inset)
-                    .lineTo(px + pw - inset, py + ph - inset)
-                    .lineTo(px + inset,      py + ph - inset)
-                    .closePath().stroke();
+            if (opts.isShowCutArrows()) {
+                float inset = Math.max(0.8f, (float)(3.0 * escala)) / 2f;
+                float aLen  = Math.min(8f, pw * 0.15f);
+                canvas.setFillColor(new DeviceRgb(0xe6, 0x7e, 0x22))
+                        .moveTo(px + inset,        py + inset)
+                        .lineTo(px + inset + aLen, py + inset + aLen * 0.5f)
+                        .lineTo(px + inset + aLen, py + inset - aLen * 0.5f)
+                        .closePath().fill();
+            }
 
-            // Flecha de inicio de corte (esquina inferior-izquierda → derecha)
-            float arrowX = px + inset;
-            float arrowY = py + inset;
-            float aLen   = Math.min(8f, pw * 0.15f);
-            canvas.setFillColor(new DeviceRgb(0xe6, 0x7e, 0x22))
-                    .moveTo(arrowX,         arrowY)
-                    .lineTo(arrowX + aLen,  arrowY + aLen * 0.5f)
-                    .lineTo(arrowX + aLen,  arrowY - aLen * 0.5f)
-                    .closePath().fill();
+            // Tapacanto como franja interna (igual que en SVG)
+            float gt  = (float)(4.0 * escala);  // grosor de la franja
+            float gap = (float)(8.0 * escala);  // separación del borde
 
-            // Marcas de tapacanto (lineas rojas en bordes)
-            float gt = Math.max(1f, Math.min(2.5f, (float)(escala * 4)));
-            canvas.setStrokeColor(ROJO_TAPAC).setLineWidth(gt);
-            if (c.isEdgeBandingX1())
-                canvas.moveTo(px, py + ph).lineTo(px + pw, py + ph).stroke();
-            if (c.isEdgeBandingX2())
-                canvas.moveTo(px, py).lineTo(px + pw, py).stroke();
-            if (c.isEdgeBandingY1())
-                canvas.moveTo(px, py).lineTo(px, py + ph).stroke();
-            if (c.isEdgeBandingY2())
-                canvas.moveTo(px + pw, py).lineTo(px + pw, py + ph).stroke();
+            // Proteger que el gap no sea mayor que 1/6 del lado más pequeño
+            float minLado = Math.min(pw, ph);
+            float safeGap = Math.min(gap, minLado / 6f);
+            float safeGt  = Math.min(gt,  minLado / 6f);
+
+            canvas.setFillColor(ROJO_TAPAC);
+
+            if (c.isEdgeBandingX1()) // top
+                canvas.rectangle(px + safeGap, py + ph - safeGap - safeGt,
+                        pw - safeGap * 2, safeGt).fill();
+
+            if (c.isEdgeBandingX2()) // bottom
+                canvas.rectangle(px + safeGap, py + safeGap,
+                        pw - safeGap * 2, safeGt).fill();
+
+            if (c.isEdgeBandingY1()) // left
+                canvas.rectangle(px + safeGap, py + safeGap,
+                        safeGt, ph - safeGap * 2).fill();
+
+            if (c.isEdgeBandingY2()) // right
+                canvas.rectangle(px + pw - safeGap - safeGt, py + safeGap,
+                        safeGt, ph - safeGap * 2).fill();
         }
-        // ── Paso 4: etiquetas de piezas (capa superior) ──────────────────
+
+        // Paso 4: etiquetas
         for (CuttingPosition c : sheet.getCuts()) {
             float px = offsetX + (float)(c.getX()            * escala);
             float py = offsetY + (float)(c.getY()            * escala);
-            float pw = (float)(c.getEffectiveWidth() * escala);
+            float pw = (float)(c.getEffectiveWidth()  * escala);
             float ph = (float)(c.getEffectiveHeight() * escala);
 
             if (pw > 22 && ph > 14) {
@@ -529,38 +595,40 @@ public class PdfReportService {
                 }
             }
 
-            // Marcas de tapacanto (lineas rojas en bordes)
-            float gt = Math.max(1f, Math.min(2.5f, (float)(escala * 4)));
-            canvas.setStrokeColor(ROJO_TAPAC).setLineWidth(gt);
-            if (c.isEdgeBandingX1())
-                canvas.moveTo(px, py + ph).lineTo(px + pw, py + ph).stroke();
-            if (c.isEdgeBandingX2())
-                canvas.moveTo(px, py).lineTo(px + pw, py).stroke();
-            if (c.isEdgeBandingY1())
-                canvas.moveTo(px, py).lineTo(px, py + ph).stroke();
-            if (c.isEdgeBandingY2())
-                canvas.moveTo(px + pw, py).lineTo(px + pw, py + ph).stroke();
+            // Número de orden (según plan)
+            if (opts.isShowCutOrder() && pw > 16 && ph > 16) {
+                // pequeño círculo con número en la esquina superior derecha
+                float cx = px + pw - 8f;
+                float cy = py + ph - 8f;
+                canvas.setFillColor(VIOLETA_OSCURO).circle(cx, cy, 5f).fill();
+                // el orden coincide con la posición en la lista (1-based)
+                int orden = sheet.getCuts().indexOf(c) + 1;
+                canvas.beginText().setFontAndSize(fontB, 4.5f).setFillColor(ColorConstants.WHITE)
+                        .moveText(cx - 3f, cy - 1.5f)
+                        .showText(String.valueOf(orden)).endText();
+            }
         }
 
-        // Cotas del tablero
-        canvas.setStrokeColor(new DeviceRgb(0x44,0x44,0x41)).setLineWidth(0.4f);
-        // Cota horizontal (abajo)
-        canvas.moveTo(offsetX, offsetY - 8).lineTo(offsetX + tw, offsetY - 8).stroke();
-        canvas.moveTo(offsetX, offsetY - 5).lineTo(offsetX, offsetY - 11).stroke();
-        canvas.moveTo(offsetX + tw, offsetY - 5).lineTo(offsetX + tw, offsetY - 11).stroke();
-        canvas.beginText().setFontAndSize(fontR, 7).setFillColor(new DeviceRgb(0x44,0x44,0x41))
-                .moveText(offsetX + tw/2 - 15, offsetY - 18)
-                .showText((int)t.getWidth() + " mm").endText();
-        // Cota vertical (izquierda)
-        canvas.moveTo(offsetX - 8, offsetY).lineTo(offsetX - 8, offsetY + th).stroke();
-        canvas.moveTo(offsetX - 5, offsetY).lineTo(offsetX - 11, offsetY).stroke();
-        canvas.moveTo(offsetX - 5, offsetY + th).lineTo(offsetX - 11, offsetY + th).stroke();
-        // Texto cota vertical (rotado a mano con posicion manual)
-        canvas.beginText().setFontAndSize(fontR, 7).setFillColor(new DeviceRgb(0x44,0x44,0x41))
-                .moveText(offsetX - 22, offsetY + th/2 - 8)
-                .showText((int)t.getHeight() + " mm").endText();
+        // Cotas del tablero (según plan)
+        if (opts.isShowDimLabels()) {
+            canvas.setStrokeColor(new DeviceRgb(0x44, 0x44, 0x41)).setLineWidth(0.4f);
+            canvas.moveTo(offsetX, offsetY - 8).lineTo(offsetX + tw, offsetY - 8).stroke();
+            canvas.moveTo(offsetX, offsetY - 5).lineTo(offsetX, offsetY - 11).stroke();
+            canvas.moveTo(offsetX + tw, offsetY - 5).lineTo(offsetX + tw, offsetY - 11).stroke();
+            canvas.beginText().setFontAndSize(fontR, 7)
+                    .setFillColor(new DeviceRgb(0x44, 0x44, 0x41))
+                    .moveText(offsetX + tw/2 - 15, offsetY - 18)
+                    .showText((int)t.getWidth() + " mm").endText();
+            canvas.moveTo(offsetX - 8, offsetY).lineTo(offsetX - 8, offsetY + th).stroke();
+            canvas.moveTo(offsetX - 5, offsetY).lineTo(offsetX - 11, offsetY).stroke();
+            canvas.moveTo(offsetX - 5, offsetY + th).lineTo(offsetX - 11, offsetY + th).stroke();
+            canvas.beginText().setFontAndSize(fontR, 7)
+                    .setFillColor(new DeviceRgb(0x44, 0x44, 0x41))
+                    .moveText(offsetX - 22, offsetY + th/2 - 8)
+                    .showText((int)t.getHeight() + " mm").endText();
+        }
 
-        // ── Leyenda del plano ──────────────────────────────────────────────
+        // Leyenda lateral (solo si hay espacio y el plan lo permite)
         float leyX = offsetX + tw + 15;
         if (leyX + 85 < W - margin) {
             float leyY = offsetY + th;
@@ -582,93 +650,65 @@ public class PdfReportService {
             canvas.setStrokeColor(PIEZA_BORDE).setLineWidth(0.4f)
                     .rectangle(leyX, leyY - 8, 14, 10).stroke();
             canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
-                    .moveText(leyX + 18, leyY - 1).showText("Pieza rotada 90deg").endText();
+                    .moveText(leyX + 18, leyY - 1).showText("Pieza rotada 90°").endText();
             leyY -= 15;
 
-            // Linea de corte guillotina (azul punteada)
-            float[] dash = {4f, 3f};
-            canvas.setStrokeColor(new DeviceRgb(0x0a, 0x84, 0xff)).setLineWidth(0.8f)
-                    .setLineDash(dash, 0)
-                    .moveTo(leyX, leyY - 4).lineTo(leyX + 14, leyY - 4).stroke();
-            canvas.setLineDash(new float[]{}, 0);
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
-                    .moveText(leyX + 18, leyY - 1).showText("Linea guillotina").endText();
-            leyY -= 15;
+            // Líneas guillotina (solo si el plan las muestra)
+            if (opts.isShowCutLines()) {
+                canvas.setStrokeColor(new DeviceRgb(0x0a, 0x84, 0xff)).setLineWidth(0.8f)
+                        .setLineDash(new float[]{4f, 3f}, 0)
+                        .moveTo(leyX, leyY - 4).lineTo(leyX + 14, leyY - 4).stroke();
+                canvas.setLineDash(new float[]{}, 0);
+                canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
+                        .moveText(leyX + 18, leyY - 1).showText("Linea guillotina").endText();
+                leyY -= 15;
+            }
 
-            // Contorno de corte (naranja / kerf)
-            canvas.setStrokeColor(new DeviceRgb(0xe6, 0x7e, 0x22)).setLineWidth(1.5f)
-                    .moveTo(leyX, leyY - 8).lineTo(leyX + 14, leyY - 8)
-                    .lineTo(leyX + 14, leyY - 1).lineTo(leyX, leyY - 1)
-                    .closePath().stroke();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
-                    .moveText(leyX + 18, leyY - 1).showText("Contorno corte (kerf)").endText();
-            leyY -= 15;
+            // Kerf (solo si el plan lo muestra)
+            if (opts.isShowKerfContour()) {
+                canvas.setStrokeColor(new DeviceRgb(0xe6, 0x7e, 0x22)).setLineWidth(1.5f)
+                        .moveTo(leyX, leyY - 8).lineTo(leyX + 14, leyY - 8)
+                        .lineTo(leyX + 14, leyY - 1).lineTo(leyX, leyY - 1)
+                        .closePath().stroke();
+                canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
+                        .moveText(leyX + 18, leyY - 1).showText("Contorno corte (kerf)").endText();
+                leyY -= 15;
+            }
 
-            // Flecha inicio de corte
-            canvas.setFillColor(new DeviceRgb(0xe6, 0x7e, 0x22))
-                    .moveTo(leyX,     leyY - 4)
-                    .lineTo(leyX + 8, leyY - 1)
-                    .lineTo(leyX + 8, leyY - 7)
-                    .closePath().fill();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
-                    .moveText(leyX + 18, leyY - 1).showText("Inicio de corte").endText();
-            leyY -= 15;
+            // Flecha inicio (solo si el plan la muestra)
+            if (opts.isShowCutArrows()) {
+                canvas.setFillColor(new DeviceRgb(0xe6, 0x7e, 0x22))
+                        .moveTo(leyX,     leyY - 4).lineTo(leyX + 8, leyY - 1)
+                        .lineTo(leyX + 8, leyY - 7).closePath().fill();
+                canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
+                        .moveText(leyX + 18, leyY - 1).showText("Inicio de corte").endText();
+                leyY -= 15;
+            }
 
-            // Numero de orden
-            canvas.setFillColor(VIOLETA_OSCURO).circle(leyX + 5, leyY - 4, 5).fill();
-            canvas.beginText().setFontAndSize(fontB, 5).setFillColor(ColorConstants.WHITE)
-                    .moveText(leyX + 3, leyY - 6).showText("1").endText();
-            canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
-                    .moveText(leyX + 18, leyY - 1).showText("Orden de corte").endText();
-            leyY -= 15;
+            // Orden de corte (solo si el plan lo muestra)
+            if (opts.isShowCutOrder()) {
+                canvas.setFillColor(VIOLETA_OSCURO).circle(leyX + 5, leyY - 4, 5).fill();
+                canvas.beginText().setFontAndSize(fontB, 5).setFillColor(ColorConstants.WHITE)
+                        .moveText(leyX + 3, leyY - 6).showText("1").endText();
+                canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
+                        .moveText(leyX + 18, leyY - 1).showText("Orden de corte").endText();
+                leyY -= 15;
+            }
 
-            // Tapacanto
+            // Tapacanto (siempre en leyenda si hay piezas con tapacanto)
             canvas.setStrokeColor(ROJO_TAPAC).setLineWidth(2f)
                     .moveTo(leyX, leyY - 4).lineTo(leyX + 14, leyY - 4).stroke();
             canvas.beginText().setFontAndSize(fontR, 7).setFillColor(VIOLETA_OSCURO)
                     .moveText(leyX + 18, leyY - 1).showText("Tapacanto").endText();
         }
 
-        drawFooter(canvas, page, fontR, numSheet + 2, totalSheets + 2,
-                "Plano " + numSheet + "/" + totalSheets);
-    }
-
-    public byte[] generate(CuttingResult result,
-                          BandingService.BandingSummary banding,
-                          String proyecto) throws IOException {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer  = new PdfWriter(baos);
-        PdfDocument pdf    = new PdfDocument(writer);
-        Document doc     = new Document(pdf, PageSize.A4);
-        doc.setMargins(0, 0, 0, 0);
-
-        PdfFont fontRegular = PdfFontFactory.createFont("Helvetica");
-        PdfFont fontBold    = PdfFontFactory.createFont("Helvetica-Bold");
-
-        String nombreProyecto = (proyecto != null && !proyecto.isBlank())
-                ? proyecto : "Plan de Corte CNC";
-
-        // ── Pagina 1: Portada ──────────────────────────────────────────────
-        PdfPage portadaPage = pdf.addNewPage(PageSize.A4);
-        drawCover(portadaPage, result, banding,
-                nombreProyecto, fontRegular, fontBold);
-
-        // ── Pagina 2: Lista de piezas ─────────────────────────────────────
-        PdfPage listPage = pdf.addNewPage(PageSize.A4);
-        drawPieceList(listPage, result, banding, fontRegular, fontBold);
-
-        // ── Paginas 3+: Un plano por tablero ──────────────────────────────
-        int planoNum = 1;
-        for (CuttingSheet plano : result.getSheets()) {
-            PdfPage planoPage = pdf.addNewPage(PageSize.A4.rotate());
-            drawCutting(planoPage, plano, planoNum,
-                    result.getSheets().size(), fontRegular, fontBold);
-            planoNum++;
+        // Marca de agua encima de todo (al final)
+        if (opts.isPdfWatermark()) {
+            drawPdfWatermark(canvas, W, H, opts.getPdfWatermarkText(), fontB);
         }
 
-        doc.close();
-        return baos.toByteArray();
+        drawFooter(canvas, page, fontR, numSheet + (opts.isShowPieceList() ? 2 : 1),
+                totalSheets + (opts.isShowPieceList() ? 2 : 1),
+                "Plano " + numSheet + "/" + totalSheets);
     }
-
 }

@@ -19,11 +19,7 @@ public class Material {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long materialId;
     private String name;
-
-    @ElementCollection
-    private List<Color> colors;
-
-    @ElementCollection
-    private List<Double> thickness;
+    private Color color;
+    private Double thickness;
 
 }

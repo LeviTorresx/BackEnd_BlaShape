@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductDTO {
+    private Long productId;
     private String productName;
     private String description;
     private Long price;

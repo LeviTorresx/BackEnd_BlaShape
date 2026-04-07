@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.blashape.backend_blashape.DTOs.ActiveSubscription;
 import com.blashape.backend_blashape.DTOs.PlanDTO;
 import com.blashape.backend_blashape.DTOs.ProductDTO;
+import com.blashape.backend_blashape.DTOs.SubscriptionDTO;
 import com.blashape.backend_blashape.services.MonetizationService;
 
 import lombok.RequiredArgsConstructor;
@@ -74,5 +76,10 @@ public class MonetizationController {
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         monetizationService.deleteProduct(id);
         return ResponseEntity.ok("Producto eliminado correctamente");
+    }
+
+    @GetMapping("/active-subscription/{carpenterId}")
+    public ResponseEntity<ActiveSubscription> getActiveSubscriptionByCarpenterId(@PathVariable Long carpenterId) {
+        return ResponseEntity.ok(monetizationService.getActivePlanByCarpenterId(carpenterId));
     }
 }

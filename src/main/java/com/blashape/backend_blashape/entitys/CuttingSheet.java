@@ -26,9 +26,10 @@ public class CuttingSheet {
     }
 
     public double getPercentageUtilized(){
-        double areaUtilized = sheet.getHeight()*sheet.getWidth();
-        if(areaUtilized == 0)return 0;
-        return (areaUtilized - getAreaUtilizedMm2()) /1_000_000.0;
+        double totalArea = sheet.getHeight() * sheet.getWidth();
+        if(totalArea == 0) return 0;
+
+        return (getAreaUtilizedMm2() / totalArea) * 100;
     }
 
     public double getWastedM2(){
