@@ -3,11 +3,11 @@ package com.blashape.backend_blashape.mapper;
 import org.mapstruct.Mapper;
 
 import com.blashape.backend_blashape.DTOs.SubscriptionDTO;
-import com.blashape.backend_blashape.entitys.Subscription;
+import com.blashape.backend_blashape.entitys.AppSubscription;
 
 @Mapper(componentModel = "spring")
 public interface SubscriptionMapper {
-    Subscription toEntity(SubscriptionDTO dto);
+    AppSubscription toEntity(SubscriptionDTO dto);
 
-    SubscriptionDTO toDTO(Subscription subscription);
+    SubscriptionDTO toDTO(AppSubscription subscription);
 }

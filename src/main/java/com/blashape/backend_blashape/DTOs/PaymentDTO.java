@@ -18,6 +18,7 @@ public class PaymentDTO {
     private PaymentType paymentType;
     private ProductDTO product;
     private SubscriptionDTO subscription;
+    private PlanDTO plan;
     private String description;
     private CarpenterDTO carpenter;
     private String stripeSessionId;

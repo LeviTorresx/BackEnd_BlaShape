@@ -21,7 +21,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "subscriptions")
-public class Subscription {
+public class AppSubscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long subscriptionId;

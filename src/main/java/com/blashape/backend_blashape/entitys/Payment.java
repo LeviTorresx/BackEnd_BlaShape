@@ -37,7 +37,7 @@ public class Payment {
 
     @ManyToOne
     @JoinColumn(name = "subscription_id")
-    private Subscription subscription;
+    private AppSubscription subscription;
 
     @ManyToOne
     @JoinColumn(name = "plan_id")
@@ -59,6 +59,7 @@ public class Payment {
     @Column(nullable = false)
     private String currency;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
 

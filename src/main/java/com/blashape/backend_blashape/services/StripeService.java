@@ -4,7 +4,6 @@ import java.time.Instant;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 
 import com.blashape.backend_blashape.entitys.Carpenter;
@@ -13,18 +12,25 @@ import com.blashape.backend_blashape.entitys.PaymentStatus;
 import com.blashape.backend_blashape.entitys.PaymentType;
 import com.blashape.backend_blashape.entitys.Plan;
 import com.blashape.backend_blashape.entitys.Product;
+import com.blashape.backend_blashape.entitys.AppSubscription;
+import com.blashape.backend_blashape.entitys.SubscriptionStatus;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.PaymentRepository;
 import com.blashape.backend_blashape.repositories.PlanRepository;
 import com.blashape.backend_blashape.repositories.ProductRepository;
+import com.blashape.backend_blashape.repositories.SubscriptionRepository;
 import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Price;
+import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.PriceCreateParams.Recurring.Interval;
 import com.stripe.param.checkout.SessionCreateParams;
 
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class StripeService {
     @Value("${stripe.secret-key}")
@@ -41,6 +47,9 @@ public class StripeService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
 
     @PostConstruct
     public void init() {
@@ -110,59 +119,43 @@ public class StripeService {
         return price.getId();
     }
 
-    public String createCheckoutSession(Long id, String successUrl, String cancelUrl, PaymentType paymentType) throws Exception {
-        if (PaymentType.ONE_TIME_PRODUCT.equals(paymentType)) {
-            Product product = productRepository.findById(id)
-                    .orElseThrow(() -> new Exception("Producto no encontrado con ID: " + id));
+    public String createCheckoutSession(Payment payment, String successUrl, String cancelUrl) throws StripeException {
+        SessionCreateParams.Builder builder = SessionCreateParams.builder()
+                .setSuccessUrl(successUrl)
+                .setCancelUrl(cancelUrl)
+                .putMetadata("paymentId", String.valueOf(payment.getPaymentId()));
 
-            if (product.getStripePriceId() == null) {
-                throw new Exception("El producto no está creado en Stripe");
-            }
-
-            SessionCreateParams params =
-                SessionCreateParams.builder()
-                        .setMode(SessionCreateParams.Mode.PAYMENT)
-                        .setSuccessUrl(successUrl)
-                        .setCancelUrl(cancelUrl)
+        if (PaymentType.ONE_TIME_PRODUCT.equals(payment.getPaymentType())) {
+                builder.setMode(SessionCreateParams.Mode.PAYMENT)
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
-                                        .setPrice(product.getStripePriceId())
+                                        .setPrice(payment.getProduct().getStripePriceId())
                                         .setQuantity(1L)
                                         .build()
                         )
                         .build();
-
-                Session session = Session.create(params);
-                return session.getId();
-        } else if (PaymentType.SUBSCRIPTION.equals(paymentType)) {
-            Plan plan = planRepository.findById(id)
-                    .orElseThrow(() -> new Exception("Plan no encontrado con ID: " + id));
-
-            if (plan.getStripePriceId() == null) {
-                throw new Exception("El plan no está creado en Stripe");
-            }
-
-            SessionCreateParams params =
-                SessionCreateParams.builder()
-                        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .setSuccessUrl(successUrl)
-                        .setCancelUrl(cancelUrl)
+        } else if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
+            builder.setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                         .addLineItem(
                                 SessionCreateParams.LineItem.builder()
-                                        .setPrice(plan.getStripePriceId())
+                                        .setPrice(payment.getPlan().getStripePriceId())
                                         .setQuantity(1L)
                                         .build()
-                        )
-                        .build();
-
-                Session session = Session.create(params);
-                return session.getId();
+                        );
         } else {
-            throw new Exception("Tipo de pago no válido");
+            throw new RuntimeException("Tipo de pago no válido");
         }
+
+        Session session = Session.create(builder.build());
+        
+        payment.setStripeSessionId(session.getId());
+        payment.setUpdatedAt(Instant.now());
+        paymentRepository.save(payment);
+
+        return session.getUrl();
     }
 
-    public Payment createPayment(Long id, Long carpenterId, String stripeSessionId, PaymentType paymentType, String description) throws Exception {
+    public Payment createPayment(Long id, Long carpenterId, PaymentType paymentType, String description) {
         Payment payment = new Payment();
         payment.setPaymentType(paymentType);
         payment.setDescription(description);
@@ -171,28 +164,91 @@ public class StripeService {
                 .orElseThrow(() -> new RuntimeException("Carpintero no encontrado con ID: " + carpenterId));
 
         payment.setCarpenter(carpenter);
-        payment.setStripeSessionId(stripeSessionId);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setCreatedAt(Instant.now());
         payment.setUpdatedAt(Instant.now());
 
         if (PaymentType.ONE_TIME_PRODUCT.equals(paymentType)) {
                 Product product = productRepository.findById(id)
-                        .orElseThrow(() -> new Exception("Producto no encontrado con ID: " + id));
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + id));
 
                 if (product.getStripePriceId() == null) {
-                        throw new Exception("El producto no está creado en Stripe");
+                        throw new RuntimeException("El producto no está creado en Stripe");
                 }
         
                 payment.setProduct(product);
                 payment.setAmount(product.getPrice());
                 payment.setCurrency(product.getCurrency());
         } else if (PaymentType.SUBSCRIPTION.equals(paymentType)) {
+                Plan plan = planRepository.findById(id)
+                        .orElseThrow(() -> new RuntimeException("Plan no encontrado con ID: " + id));
+
+                if (plan.getStripePriceId() == null) {
+                        throw new RuntimeException("El plan no está creado en Stripe");
+                }
+
                 payment.setSubscription(null);
+                payment.setPlan(plan);
+                payment.setAmount(plan.getPrice());
+                payment.setCurrency(plan.getCurrency());
         } else {
-                throw new Exception("Tipo de pago no válido");
+                throw new RuntimeException("Tipo de pago no válido");
         }
 
         return paymentRepository.save(payment);
+    }
+
+    public void handleCheckoutSessionCompleted(Session session) throws StripeException {
+        log.info("Session ID: {}", session.getId());
+        log.info("Metadata: {}", session.getMetadata());
+        log.info("PaymentIntent: {}", session.getPaymentIntent());
+        log.info("Subscription: {}", session.getSubscription());
+
+        String paymentIdString = session.getMetadata().get("paymentId");
+
+        if (paymentIdString == null) {
+                log.error("paymentId no encontrado en metadata");
+                throw new RuntimeException("paymentId ausente en metadata");
+        }
+
+        Long paymentId = Long.parseLong(paymentIdString);
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Pago no encontrado"));
+
+        if (PaymentStatus.PAID.equals(payment.getStatus())) {
+                return;
+        }
+
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setStripePaymentIntent(session.getPaymentIntent());
+        payment.setUpdatedAt(Instant.now());
+
+        if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
+                Subscription stripeSub = Subscription.retrieve(session.getSubscription());
+
+                String paymentIntent = null;
+
+                if (stripeSub.getLatestInvoice() != null) {
+                        com.stripe.model.Invoice invoice = com.stripe.model.Invoice.retrieve(stripeSub.getLatestInvoice());
+                        paymentIntent = invoice.getPaymentIntent();
+                }
+
+                AppSubscription subscription = new AppSubscription();
+                subscription.setCarpenter(payment.getCarpenter());
+                subscription.setPlan(payment.getPlan());
+                subscription.setStripeSubscriptionId(session.getSubscription());
+                subscription.setStripeCustomerId(session.getCustomer());
+                subscription.setStatus(SubscriptionStatus.ACTIVE);
+                subscription.setStartDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                subscription.setEndDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+
+                subscriptionRepository.save(subscription);
+                payment.setSubscription(subscription);
+                payment.setStripePaymentIntent(paymentIntent);
+        }
+
+        paymentRepository.save(payment);
+        log.info("Pago actualizado a PAID para paymentId: {}", paymentId);
     }
 }
