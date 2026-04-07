@@ -4,14 +4,19 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.blashape.backend_blashape.DTOs.ActiveSubscription;
 import com.blashape.backend_blashape.DTOs.PlanDTO;
 import com.blashape.backend_blashape.DTOs.ProductDTO;
+import com.blashape.backend_blashape.DTOs.SubscriptionDTO;
 import com.blashape.backend_blashape.entitys.Plan;
 import com.blashape.backend_blashape.entitys.Product;
+import com.blashape.backend_blashape.entitys.SubscriptionStatus;
 import com.blashape.backend_blashape.mapper.PlanMapper;
 import com.blashape.backend_blashape.mapper.ProductMapper;
+import com.blashape.backend_blashape.mapper.SubscriptionMapper;
 import com.blashape.backend_blashape.repositories.PlanRepository;
 import com.blashape.backend_blashape.repositories.ProductRepository;
+import com.blashape.backend_blashape.repositories.SubscriptionRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class MonetizationService {
     private final PlanRepository planRepository;
     private final ProductRepository productRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final SubscriptionMapper subscriptionMapper;
     private final PlanMapper planMapper;
     private final ProductMapper productMapper;
     private static final String PLAN_NO_ENCONTRADO = "Plan no encontrado con ID: ";
@@ -133,10 +140,22 @@ public class MonetizationService {
     }
 
     public void deletePlan(Long id) {
-        planRepository.deleteById(id);
+        Plan existing = planRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(PLAN_NO_ENCONTRADO + id));
+
+        planRepository.delete(existing);
     }
 
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(PRODUCTO_NO_ENCONTRADO + id));
+
+        productRepository.delete(existing);
+    }
+
+    public ActiveSubscription getActivePlanByCarpenterId(Long carpenterId) {
+        return subscriptionRepository.findByCarpenter_CarpenterIdAndStatus(carpenterId, SubscriptionStatus.ACTIVE)
+                .map(subscriptionMapper::toActiveSubscriptionDTO)
+                .orElseThrow(() -> new RuntimeException("No se encontró una suscripción activa para el carpintero con ID: " + carpenterId));
     }
 }
