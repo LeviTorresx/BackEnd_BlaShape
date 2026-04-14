@@ -1,5 +1,7 @@
 package com.blashape.backend_blashape.repositories;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +15,6 @@ public interface SubscriptionRepository extends JpaRepository<AppSubscription, L
     Boolean existsByCarpenter_CarpenterIdAndStatus(Long carpenterId, SubscriptionStatus status);
 
     Optional<AppSubscription> findByCarpenter_CarpenterIdAndStatus(Long carpenterId, SubscriptionStatus status);
+
+    List<AppSubscription> findByStatusInAndEndDateBefore(List<SubscriptionStatus> statuses, Instant endDate);
 }

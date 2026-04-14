@@ -42,4 +42,6 @@ public class AppSubscription {
     private Instant startDate;
     
     private Instant endDate;
+
+    private Integer remainingCuts;
 }

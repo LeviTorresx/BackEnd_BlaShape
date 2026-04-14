@@ -1,33 +1,43 @@
 package com.blashape.backend_blashape.services;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.blashape.backend_blashape.DTOs.ActiveSubscription;
+import com.blashape.backend_blashape.DTOs.PaymentDTO;
 import com.blashape.backend_blashape.DTOs.PlanDTO;
 import com.blashape.backend_blashape.DTOs.ProductDTO;
-import com.blashape.backend_blashape.DTOs.SubscriptionDTO;
+import com.blashape.backend_blashape.entitys.AppSubscription;
 import com.blashape.backend_blashape.entitys.Plan;
 import com.blashape.backend_blashape.entitys.Product;
 import com.blashape.backend_blashape.entitys.SubscriptionStatus;
+import com.blashape.backend_blashape.mapper.PaymentMapper;
 import com.blashape.backend_blashape.mapper.PlanMapper;
 import com.blashape.backend_blashape.mapper.ProductMapper;
 import com.blashape.backend_blashape.mapper.SubscriptionMapper;
+import com.blashape.backend_blashape.repositories.PaymentRepository;
 import com.blashape.backend_blashape.repositories.PlanRepository;
 import com.blashape.backend_blashape.repositories.ProductRepository;
 import com.blashape.backend_blashape.repositories.SubscriptionRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MonetizationService {
     private final PlanRepository planRepository;
     private final ProductRepository productRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionMapper subscriptionMapper;
+    private final PaymentRepository paymentRepository;
+    private final PaymentMapper paymentMapper;
     private final PlanMapper planMapper;
     private final ProductMapper productMapper;
     private static final String PLAN_NO_ENCONTRADO = "Plan no encontrado con ID: ";
@@ -157,5 +167,23 @@ public class MonetizationService {
         return subscriptionRepository.findByCarpenter_CarpenterIdAndStatus(carpenterId, SubscriptionStatus.ACTIVE)
                 .map(subscriptionMapper::toActiveSubscriptionDTO)
                 .orElseThrow(() -> new RuntimeException("No se encontró una suscripción activa para el carpintero con ID: " + carpenterId));
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void deleteInactiveSubscriptions() {
+        Instant fifteenDaysAgo = Instant.now().minus(15, ChronoUnit.DAYS);
+
+        List<AppSubscription> toDelete = subscriptionRepository.findByStatusInAndEndDateBefore(
+                List.of(SubscriptionStatus.CANCELED), fifteenDaysAgo);
+
+        subscriptionRepository.deleteAll(toDelete);
+
+        log.info("Subscripciones inactvias eliminadas: {}", toDelete.size());
+    }
+
+    public List<PaymentDTO> getPaidPaymentsByCarpenterId(Long carpenterId) {
+        return paymentRepository.findPaidPaymentsByCarpenterId(carpenterId).stream()
+                .map(paymentMapper::toDTO)
+                .toList();
     }
 }

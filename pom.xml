@@ -156,7 +156,6 @@
             <version>1.0.10</version>
         </dependency>
 	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>

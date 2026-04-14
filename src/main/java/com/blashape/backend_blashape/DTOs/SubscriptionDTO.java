@@ -22,4 +22,5 @@ public class SubscriptionDTO {
     private SubscriptionStatus status;
     private Instant startDate;
     private Instant endDate;
+    private Integer remainingCuts;
 }
