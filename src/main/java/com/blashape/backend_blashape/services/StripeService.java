@@ -259,6 +259,7 @@ public class StripeService {
             subscription.setStatus(SubscriptionStatus.ACTIVE);
             subscription.setStartDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
             subscription.setEndDate(Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+            subscription.setRemainingCuts(payment.getPlan().getCuttingLimit());
 
             subscriptionRepository.save(subscription);
 
