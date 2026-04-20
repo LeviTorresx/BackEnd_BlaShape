@@ -94,7 +94,7 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(carpenter));
         when(passwordEncoder.matches("password123", carpenter.getPassword()))
                 .thenReturn(true);
-        when(jwtUtil.generateToken("juan.perez@gmail.com", 1L))
+        when(jwtUtil.generateToken("juan.perez@gmail.com", 1L, "PRO"))
                 .thenReturn("mocked-jwt-token");
 
         // Act
@@ -105,7 +105,7 @@ class AuthServiceTest {
         assertEquals("mocked-jwt-token", response.getToken());
         verify(carpenterRepository).findByEmail("juan.perez@gmail.com");
         verify(passwordEncoder).matches("password123", carpenter.getPassword());
-        verify(jwtUtil).generateToken("juan.perez@gmail.com", 1L);
+        verify(jwtUtil).generateToken("juan.perez@gmail.com", 1L, "PRO");
     }
 
     @Test
