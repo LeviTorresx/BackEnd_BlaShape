@@ -31,6 +31,7 @@ public class AuthService {
     private final CarpenterMapper carpenterMapper;
     private final EmailVerificationTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final MonetizationService monetizationService;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -46,7 +47,9 @@ public class AuthService {
             throw new RuntimeException("Debes verificar tu correo antes de iniciar sesión");
         }
 
-        String token = jwtUtil.generateToken(carpenter.getEmail(), carpenter.getCarpenterId());
+        String plan = monetizationService.getActivePlanByCarpenterId(carpenter.getCarpenterId()).getPlan().getPlanName();
+
+        String token = jwtUtil.generateToken(carpenter.getEmail(), carpenter.getCarpenterId(), plan);
 
         LoginResponse response = new LoginResponse();
         response.setToken(token);

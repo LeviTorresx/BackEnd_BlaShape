@@ -20,10 +20,11 @@ public class JwtUtil {
     @Value("${JWT_EXPIRATION}")
     private long EXPIRATION_TIME; //ahora es long, no String
 
-    public String generateToken(String email, Long carpenterId) {
+    public String generateToken(String email, Long carpenterId, String plan) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("carpenterId", carpenterId)
+                .claim("plan", plan)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY.getBytes())
@@ -68,5 +69,9 @@ public class JwtUtil {
             }
         }
         throw new RuntimeException("Token no encontrado en las cookies");
+    }
+
+    public String extractPlan(String token) {
+        return extractAllClaims(token).get("plan", String.class);
     }
 }
