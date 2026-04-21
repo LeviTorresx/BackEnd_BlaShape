@@ -8,10 +8,20 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring", uses = {EdgesMapper.class, ColorMapper.class})
 public interface PieceMapper {
+
+    @Mapping(source = "color", target = "colorDTO")
+    @Mapping(source = "edges", target = "edgesDTO")
     PieceDTO toDTO(Piece piece);
 
+    @Mapping(target = "cutting", ignore = true)
+    @Mapping(target = "pieceId", ignore = true) // ← ignorar ID al crear
+    @Mapping(source = "colorDTO", target = "color")
+    @Mapping(source = "edgesDTO", target = "edges")
     Piece toEntity(PieceDTO dto);
 
-    @Mapping(target = "cutting", ignore = true) // no tocar cutting aquí
+    @Mapping(target = "cutting", ignore = true)
+    @Mapping(target = "pieceId", ignore = true) // ← ignorar ID al actualizar
+    @Mapping(source = "colorDTO", target = "color")
+    @Mapping(source = "edgesDTO", target = "edges")
     void updateEntityFromDTO(PieceDTO dto, @MappingTarget Piece entity);
 }
