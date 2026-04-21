@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(BASE_ENDPOINT + "/auth/login",
                                         BASE_ENDPOINT + "/auth/register",
+                                        BASE_ENDPOINT + "/auth/logout",
                                         BASE_ENDPOINT + "/auth/verify-email",
                                         BASE_ENDPOINT + "/auth/resend-verification",
                                         BASE_ENDPOINT + "/auth/forgot-password",
