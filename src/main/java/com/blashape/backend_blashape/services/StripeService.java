@@ -2,18 +2,12 @@ package com.blashape.backend_blashape.services;
 
 import java.time.Instant;
 
+import com.blashape.backend_blashape.DTOs.InvoiceDTO;
+import com.blashape.backend_blashape.entitys.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.blashape.backend_blashape.entitys.Carpenter;
-import com.blashape.backend_blashape.entitys.Payment;
-import com.blashape.backend_blashape.entitys.PaymentStatus;
-import com.blashape.backend_blashape.entitys.PaymentType;
-import com.blashape.backend_blashape.entitys.Plan;
-import com.blashape.backend_blashape.entitys.Product;
-import com.blashape.backend_blashape.entitys.AppSubscription;
-import com.blashape.backend_blashape.entitys.SubscriptionStatus;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.PaymentRepository;
 import com.blashape.backend_blashape.repositories.PlanRepository;
@@ -269,53 +263,53 @@ public class StripeService {
 
         paymentRepository.save(payment);
 
-        byte[] pdf = pdfInvoiceService.generateInvoice(payment);
+        // Dentro de handleCheckoutSessionCompleted, después de paymentRepository.save(payment)
 
-        String email = payment.getCarpenter().getEmail();
-        String name = payment.getCarpenter().getName();
+        Carpenter carpenter = payment.getCarpenter();
+        Workshop workshop  = carpenter.getWorkshop(); // puede ser null si aún no tiene taller
 
-        String subject;
-        String html;
+        InvoiceDTO invoiceDTO = InvoiceDTO.builder()
+                .invoiceId("FAC-" + payment.getPaymentId())
+                .invoiceDate(Instant.now())
+                // Cliente
+                .customerName(carpenter.getName() + " " + carpenter.getLastName())
+                .customerDni(carpenter.getDni())
+                .customerEmail(carpenter.getEmail())
+                // Taller del carpintero
+                .workshopName(workshop != null ? workshop.getName() : "-")
+                .workshopAddress(workshop != null ? workshop.getAddress() : "-")
+                // Servicio
+                .concept(payment.getDescription())
+                .periodStart(payment.getSubscription() != null
+                        ? payment.getSubscription().getStartDate() : null)
+                .periodEnd(payment.getSubscription() != null
+                        ? payment.getSubscription().getEndDate() : null)
+                .unitCost(payment.getAmount())
+                .discountPercent(0.0)
+                .vatPercent(19.0)
+                .paymentMethod("Pago en linea - Stripe")
+                .build();
 
-        if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
+        byte[] pdf = pdfInvoiceService.generateFormalInvoice(invoiceDTO);
 
-            subject = "Confirmación de suscripción - Blashape";
+        String subject = PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())
+                ? "Tu factura de suscripción - Blashape"
+                : "Tu factura de compra - Blashape";
 
-            html = String.format("""
-        <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
-            <h2 style="color:#9117e4;">¡Suscripción activada!</h2>
-            <p>Hola <strong>%s</strong>,</p>
-            <p>Tu suscripción ha sido activada correctamente.</p>
-            <p>Adjunto encontrarás la factura de tu plan.</p>
-            <br/>
-            <p>Gracias por confiar en <strong>Blashape</strong>.</p>
-        </div>
-        """, name);
-
-        } else {
-
-            subject = "Factura de tu compra - Blashape";
-
-            html = String.format("""
-        <div style="font-family: Arial, sans-serif; padding:20px; color:#333;">
-            <h2 style="color:#9117e4;">Factura de tu compra</h2>
-            <p>Hola <strong>%s</strong>,</p>
-            <p>Tu pago ha sido procesado exitosamente.</p>
-            <p>Adjunto encontrarás tu factura.</p>
-            <br/>
-            <p>Gracias por usar <strong>Blashape</strong>.</p>
-        </div>
-        """, name);
-        }
+        String htmlBody = String.format("""
+    <div style="font-family:Arial,sans-serif; padding:24px; color:#333;">
+        <h2 style="color:#9117e4;">¡Gracias por tu pago, %s!</h2>
+        <p>Adjunto encontrarás tu factura correspondiente.</p>
+        <p>Gracias por confiar en <strong>Blashape</strong>.</p>
+    </div>
+    """, carpenter.getName());
 
         emailService.sendEmailWithAttachment(
-                email,
+                carpenter.getEmail(),
                 subject,
-                html,
+                htmlBody,
                 pdf,
-                "factura.pdf"
+                "factura_" + payment.getPaymentId() + ".pdf"
         );
-
-        log.info("Pago actualizado a PAID para paymentId: {}", paymentId);
     }
 }
