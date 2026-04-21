@@ -15,7 +15,7 @@ public class PreviewGeneratorSVG {
     private static final int    PADDING_BOT = 30;
     private static final int    CANVAS_H    = SVG_H - PADDING_TOP - PADDING_BOT;
 
-    private static final String COLOR_FONDO = "#f5f0e8";
+    private static final String COLOR_FONDO = "#ffffff";
     private static final String COLOR_BORDE = "#2c3e50";
     private static final String COLOR_TEXTO = "#1a1a2e";
     private static final String COLOR_TAPAC = "#e74c3c";
@@ -61,7 +61,6 @@ public class PreviewGeneratorSVG {
                 .append(COLOR_TEXTO).append("'>")
                 .append(escape(mat)).append(" ").append((int)t.getWidth()).append("x")
                 .append((int)t.getHeight()).append(" mm — Plano ")
-                .append(sheet.getPlaneNumber()).append(" (").append(pct).append("% aprovechado)")
                 .append("</text>");
 
         // ── Fondo lámina ─────────────────────────────────────────────────────
