@@ -47,7 +47,7 @@ public class AuthService {
             throw new RuntimeException("Debes verificar tu correo antes de iniciar sesión");
         }
 
-        String plan = monetizationService.getActivePlanByCarpenterId(carpenter.getCarpenterId()).getPlan().getPlanName();
+        String plan = monetizationService.getActivePlanNameByCarpenterId(carpenter.getCarpenterId());
 
         String token = jwtUtil.generateToken(carpenter.getEmail(), carpenter.getCarpenterId(), plan);
 
