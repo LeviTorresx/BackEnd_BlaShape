@@ -65,7 +65,7 @@ class CustomerServiceTest {
         customerDTO.setDni("123456");
         customerDTO.setPhone("3000000000");
         customerDTO.setEmail("deibinson@email.com");
-        customerDTO.setCarpenterId(1L);
+        customerDTO.getCarpenterIds().add(1L);
 
         customer = new Customer();
         customer.setCustomerId(1L);
@@ -134,7 +134,7 @@ class CustomerServiceTest {
     @Test
     void createCustomerWithoutCarpenter() {
 
-        customerDTO.setCarpenterId(null);
+        customerDTO.getCarpenterIds().clear();
 
         assertThrows(IllegalArgumentException.class,
                 () -> customerService.createCustomer(customerDTO));
@@ -210,7 +210,7 @@ class CustomerServiceTest {
         when(customerMapper.toDTO(customer)).thenReturn(customerDTO);
 
         customerDTO.setName("Monooo");
-        customerDTO.setCarpenterId(1L);
+        customerDTO.getCarpenterIds().add(1L);
 
         // Act
         CustomerDTO result = customerService.updateCustomer(1L, customerDTO);

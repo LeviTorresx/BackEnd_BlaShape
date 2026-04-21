@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -40,9 +41,8 @@ public class Carpenter extends User {
     @JsonManagedReference(value = "carpenter-alert")
     private List<Alert> alertList;
 
-    @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
-    @JsonManagedReference(value = "carpenter-customer")
-    private List<Customer> customers;
+    @ManyToMany(mappedBy = "carpenters")
+    private List<Customer> customers = new ArrayList<>();
 
     @OneToMany(mappedBy = "carpenter", cascade = CascadeType.ALL)
     @JsonManagedReference(value = "carpenter-subscription")

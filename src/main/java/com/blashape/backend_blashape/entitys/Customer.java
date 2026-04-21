@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,10 +24,14 @@ public class Customer extends User {
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "customer-furniture")
-    private List<Furniture> furnitureList;
+    private List<Furniture> furnitureList = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "carpenter_id")
-    @JsonBackReference(value = "carpenter-customer")
-    private Carpenter carpenter;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "customer_carpenter",
+            joinColumns = @JoinColumn(name = "customer_id"),
+            inverseJoinColumns = @JoinColumn(name = "carpenter_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "carpenter_id"})
+    )
+    private List<Carpenter> carpenters = new ArrayList<>();
 }
