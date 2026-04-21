@@ -1,5 +1,6 @@
 package com.blashape.backend_blashape.services;
 
+import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
@@ -29,7 +30,7 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado con ID: ";
     
-    public CustomerDTO createCustomer(CustomerDTO dto) {
+    public CustomerDTO createCustomer(CreateCustomerRequest dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
             throw new IllegalArgumentException("El nombre del cliente es obligatorio");
         }
@@ -50,11 +51,11 @@ public class CustomerService {
             throw new IllegalArgumentException("El teléfono del cliente es obligatorio");
         }
 
-        if (dto.getCarpenterIds() == null || dto.getCarpenterIds().isEmpty()){
+        if (dto.getCarpenterId() == null){
             throw new IllegalArgumentException("El cliente debe tener un carpintero asociado");
         }
 
-        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterIds().get(0))
+        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
 
         if(customerRepository.existsByDni(dto.getDni()) || customerRepository.existsByEmail(dto.getEmail()) || customerRepository.existsByPhone(dto.getPhone())){
@@ -83,7 +84,7 @@ public class CustomerService {
             return customerMapper.toDTO(customerRepository.save(customer));
         }
 
-        Customer customer = customerMapper.toEntity(dto);
+        Customer customer = customerMapper.createToEntity(dto);
         customer.getCarpenters().add(carpenter);
 
 

@@ -1,5 +1,6 @@
 package com.blashape.backend_blashape.mapper;
 
+import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.entitys.Customer;
 import com.blashape.backend_blashape.entitys.Furniture;
@@ -18,6 +19,10 @@ public interface CustomerMapper {
     @Mapping(target = "furnitureList", ignore = true)
     @Mapping(target = "carpenters", ignore = true)
     Customer toEntity(CustomerDTO dto);
+
+    @Mapping(target = "furnitureList", ignore = true)
+    @Mapping(target = "carpenters", ignore = true)
+    Customer createToEntity(CreateCustomerRequest dto);
 
     default List<Long> mapFurnitureListToIds(List<Furniture> furnitureList) {
         if (furnitureList == null) return null;
