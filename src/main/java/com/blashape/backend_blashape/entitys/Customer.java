@@ -24,13 +24,14 @@ public class Customer extends User {
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference(value = "customer-furniture")
-    private List<Furniture> furnitureList;
+    private List<Furniture> furnitureList = new ArrayList<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "customer_carpenter",
             joinColumns = @JoinColumn(name = "customer_id"),
-            inverseJoinColumns = @JoinColumn(name = "carpenter_id")
+            inverseJoinColumns = @JoinColumn(name = "carpenter_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "carpenter_id"})
     )
     private List<Carpenter> carpenters = new ArrayList<>();
 }
