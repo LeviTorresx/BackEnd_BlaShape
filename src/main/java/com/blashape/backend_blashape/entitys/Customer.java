@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -25,8 +26,11 @@ public class Customer extends User {
     @JsonManagedReference(value = "customer-furniture")
     private List<Furniture> furnitureList;
 
-    @ManyToOne
-    @JoinColumn(name = "carpenter_id")
-    @JsonBackReference(value = "carpenter-customer")
-    private Carpenter carpenter;
+    @ManyToMany
+    @JoinTable(
+            name = "customer_carpenter",
+            joinColumns = @JoinColumn(name = "customer_id"),
+            inverseJoinColumns = @JoinColumn(name = "carpenter_id")
+    )
+    private List<Carpenter> carpenters = new ArrayList<>();
 }

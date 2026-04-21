@@ -50,8 +50,8 @@ public class CustomerService {
             throw new IllegalArgumentException("El teléfono del cliente es obligatorio");
         }
 
-        if (dto.getCarpenterId() == null){
-            throw new IllegalArgumentException("El cliente debe tener un carpintero asociado");
+        if (dto.getCarpenterIds() == null || dto.getCarpenterIds().isEmpty()){
+            throw new IllegalArgumentException("El cliente debe tener algún carpintero asociado");
         }
 
         if(customerRepository.existsByDni(dto.getDni())){
@@ -66,11 +66,12 @@ public class CustomerService {
             throw new IllegalArgumentException("Ya existe un cliente con ese teléfono");
         }
 
-        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
+        
+        Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterIds().get(0))
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
 
         Customer customer = customerMapper.toEntity(dto);
-        customer.setCarpenter(carpenter);
+        customer.getCarpenters().add(carpenter);
 
 
         // Si vienen muebles asociados
@@ -136,10 +137,10 @@ public class CustomerService {
             customer.setEmail(dto.getEmail());
         }
 
-        if (dto.getCarpenterId() != null) {
-            Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
-                    .orElseThrow(() -> new RuntimeException("Carpintero no encontrado con ID " + dto.getCarpenterId()));
-            customer.setCarpenter(carpenter);
+        if (dto.getCarpenterIds() != null && !dto.getCarpenterIds().isEmpty()) {
+            Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterIds().get(0))
+                    .orElseThrow(() -> new RuntimeException("Carpintero no encontrado con ID " + dto.getCarpenterIds().get(0)));
+            customer.getCarpenters().add(carpenter);
         }
 
         Customer updated = customerRepository.save(customer);
