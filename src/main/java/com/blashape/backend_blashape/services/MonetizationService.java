@@ -169,6 +169,12 @@ public class MonetizationService {
                 .orElseThrow(() -> new RuntimeException("No se encontró una suscripción activa para el carpintero con ID: " + carpenterId));
     }
 
+    public String getActivePlanNameByCarpenterId(Long carpenterId) {
+        return subscriptionRepository.findByCarpenter_CarpenterIdAndStatus(carpenterId, SubscriptionStatus.ACTIVE)
+                .map(subscription -> subscription.getPlan().getPlanName())
+                .orElse("NO_PLAN");
+    }
+
     @Scheduled(cron = "0 0 0 * * *")
     public void deleteInactiveSubscriptions() {
         Instant fifteenDaysAgo = Instant.now().minus(15, ChronoUnit.DAYS);
