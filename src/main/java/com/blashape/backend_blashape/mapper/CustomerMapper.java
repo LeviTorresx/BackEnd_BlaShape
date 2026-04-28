@@ -1,6 +1,5 @@
 package com.blashape.backend_blashape.mapper;
 
-import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.entitys.Customer;
 import com.blashape.backend_blashape.entitys.Furniture;
@@ -13,24 +12,20 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface CustomerMapper {
     @Mapping(target ="furnitureListIds", source = "furnitureList")
-    @Mapping(target = "carpenterIds", source = "carpenters")
+    @Mapping(target = "carpenterId", source = "carpenter")
     CustomerDTO toDTO(Customer customer);
 
     @Mapping(target = "furnitureList", ignore = true)
-    @Mapping(target = "carpenters", ignore = true)
+    @Mapping(target = "carpenter", ignore = true)
     Customer toEntity(CustomerDTO dto);
-
-    @Mapping(target = "furnitureList", ignore = true)
-    @Mapping(target = "carpenters", ignore = true)
-    Customer createToEntity(CreateCustomerRequest dto);
 
     default List<Long> mapFurnitureListToIds(List<Furniture> furnitureList) {
         if (furnitureList == null) return null;
         return furnitureList.stream().map(Furniture::getFurnitureId).toList();
     }
 
-    default List<Long> mapCarpentersToIds(List<Carpenter> carpenters) {
-        if (carpenters == null) return null;
-        return carpenters.stream().map(Carpenter::getCarpenterId).toList();
+    default Long mapCarpentersToIds(Carpenter carpenter) {
+        if (carpenter == null) return null;
+        return carpenter.getCarpenterId();
     }
 }

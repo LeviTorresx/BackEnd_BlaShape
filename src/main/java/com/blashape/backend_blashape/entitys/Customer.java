@@ -26,12 +26,8 @@ public class Customer extends User {
     @JsonManagedReference(value = "customer-furniture")
     private List<Furniture> furnitureList = new ArrayList<>();
 
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinTable(
-            name = "customer_carpenter",
-            joinColumns = @JoinColumn(name = "customer_id"),
-            inverseJoinColumns = @JoinColumn(name = "carpenter_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "carpenter_id"})
-    )
-    private List<Carpenter> carpenters = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "carpenter_id", referencedColumnName = "carpenterId")
+    @JsonBackReference(value = "carpenter-customer")
+    private Carpenter carpenter;
 }

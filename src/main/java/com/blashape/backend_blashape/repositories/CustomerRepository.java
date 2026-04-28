@@ -15,16 +15,14 @@ import java.util.Optional;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    @Query("SELECT c FROM Customer c JOIN c.carpenters carp WHERE carp.carpenterId = :carpenterId AND c.isActive = true")
+    @Query("SELECT c FROM Customer c WHERE c.carpenter.carpenterId = :carpenterId AND c.isActive = true")
     List<Customer> findActiveCustomersByCarpenterId(@Param("carpenterId") Long carpenterId);
 
     boolean existsByDni(String dni);
 
     Optional<Customer> findByDni(String dni);
 
-    boolean existsByEmail(String email);
-
-    boolean existsByPhone(String phone);
+    boolean existsByDniAndCarpenter_CarpenterId(String dni, Long carpenterId);
 
     @Modifying
     @Transactional

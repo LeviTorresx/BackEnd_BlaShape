@@ -1,6 +1,5 @@
 package com.blashape.backend_blashape.controllers;
 
-import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.services.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +19,10 @@ public class CustomerController {
     private final String mkey = "message";
 
     @PostMapping("/create")
-    public ResponseEntity<Map<String, String>> createCustomer(@RequestBody CreateCustomerRequest dto){
+    public ResponseEntity<Map<String, String>> createCustomer(@RequestBody CustomerDTO dto){
 
         CustomerDTO customerDTO = customerService.createCustomer(dto);
-        return ResponseEntity.ok(Map.of(mkey, "Cliente "+customerDTO.getName()+" creado exitosamente"));
+        return ResponseEntity.ok(Map.of(mkey, "Cliente "+ customerDTO.getName()+" creado exitosamente"));
     }
 
     @GetMapping("/get/{id}")
