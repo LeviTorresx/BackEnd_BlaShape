@@ -42,6 +42,12 @@ public class CustomerController {
         return ResponseEntity.ok(customers);
     }
 
+    @GetMapping("/all/{carpenterId}")
+    public ResponseEntity<List<CustomerDTO>> getAllByCarpenterId(@PathVariable Long carpenterId) {
+        List<CustomerDTO> customers = customerService.getCustomersByCarpenterId(carpenterId);
+        return ResponseEntity.ok(customers);
+    }
+
     @PutMapping("/edit/{id}")
     public ResponseEntity<CustomerDTO> editCustomer(@PathVariable Long id, @RequestBody CustomerDTO dto){
         return ResponseEntity.ok(customerService.updateCustomer(id, dto));
