@@ -107,6 +107,16 @@ public class CustomerService {
                 .toList();
     }
 
+    public List<CustomerDTO> getCustomersByCarpenterId(Long carpenterId) {
+        Carpenter carpenter = carpenterRepository.findById(carpenterId)
+                .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado con ID: " + carpenterId));
+
+        List<Customer> customers = customerRepository.findActiveCustomersByCarpenterId(carpenter.getCarpenterId());
+        return customers.stream()
+                .map(customerMapper::toDTO)
+                .toList();
+    }
+
     public CustomerDTO updateCustomer(Long customerId, CustomerDTO dto) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException(CLIENTE_NO_ENCONTRADO + customerId));
