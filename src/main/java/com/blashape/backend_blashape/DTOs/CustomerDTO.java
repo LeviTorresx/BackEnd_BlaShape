@@ -21,6 +21,6 @@ public class CustomerDTO {
     private String role;
     private Boolean isActive;
     private Instant deletedAt;
-    private List<Long> carpenterIds;
+    private Long carpenterId;
     private List<Long> furnitureListIds;
 }

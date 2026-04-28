@@ -7,7 +7,6 @@ import static org.mockito.Mockito.*;
 import java.util.List;
 import java.util.Optional;
 
-import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
@@ -50,7 +49,6 @@ class CustomerServiceTest {
     private CustomerService customerService;
 
     private CustomerDTO customerDTO;
-    private CreateCustomerRequest createCustomerRequest;
     private Customer customer;
     private Carpenter carpenter;
 
@@ -67,16 +65,7 @@ class CustomerServiceTest {
         customerDTO.setDni("123456");
         customerDTO.setPhone("3000000000");
         customerDTO.setEmail("deibinson@email.com");
-        customerDTO.getCarpenterIds().add(1L);
-
-        createCustomerRequest = new CreateCustomerRequest();
-        createCustomerRequest.setCustomerId(1L);
-        createCustomerRequest.setName("Deibinson");
-        createCustomerRequest.setLastName("Perez");
-        createCustomerRequest.setDni("123456");
-        createCustomerRequest.setPhone("3000000000");
-        createCustomerRequest.setEmail("deibinson@email.com");
-        createCustomerRequest.setCarpenterId(1L);
+        customerDTO.setCarpenterId(1L);
 
         customer = new Customer();
         customer.setCustomerId(1L);
@@ -93,7 +82,7 @@ class CustomerServiceTest {
         when(customerRepository.save(any())).thenReturn(customer);
         when(customerMapper.toDTO(customer)).thenReturn(customerDTO);
 
-        CustomerDTO result = customerService.createCustomer(createCustomerRequest);
+        CustomerDTO result = customerService.createCustomer(customerDTO);
 
         assertNotNull(result);
         verify(customerRepository).save(any());
@@ -103,10 +92,10 @@ class CustomerServiceTest {
     @Test
     void createCustomerWithoutName() {
 
-        createCustomerRequest.setName(null);
+        customerDTO.setName(null);
 
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
 
         verify(customerRepository, never()).save(any());
     }
@@ -115,40 +104,40 @@ class CustomerServiceTest {
     @Test
     void createCustomerWithoutDni() {
 
-        createCustomerRequest.setDni(null);
+        customerDTO.setDni(null);
 
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
     }
 
     // EMAIL INVALID
     @Test
     void createCustomerInvalidEmail() {
 
-        createCustomerRequest.setEmail("correo-invalido");
+        customerDTO.setEmail("correo-invalido");
 
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
     }
 
     // PHONE NULL
     @Test
     void createCustomerWithoutPhone() {
 
-        createCustomerRequest.setPhone(null);
+        customerDTO.setPhone(null);
 
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
     }
 
     // CARPENTER NULL
     @Test
     void createCustomerWithoutCarpenter() {
 
-        customerDTO.getCarpenterIds().clear();
+        customerDTO.setCarpenterId(null);
 
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
     }
 
     // CARPENTER NOT FOUND
@@ -158,7 +147,7 @@ class CustomerServiceTest {
         when(carpenterRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
 
         verify(customerRepository, never()).save(any());
     }
@@ -221,7 +210,7 @@ class CustomerServiceTest {
         when(customerMapper.toDTO(customer)).thenReturn(customerDTO);
 
         customerDTO.setName("Monooo");
-        customerDTO.getCarpenterIds().add(1L);
+        customerDTO.setCarpenterId(1L);
 
         // Act
         CustomerDTO result = customerService.updateCustomer(1L, customerDTO);
@@ -272,22 +261,16 @@ class CustomerServiceTest {
                 .thenReturn(false)   // primera llamada
                 .thenReturn(true);   // segunda llamada
 
-        when(customerRepository.existsByEmail("deibinson@email.com"))
-                .thenReturn(false);
-
-        when(customerRepository.existsByPhone("3000000000"))
-                .thenReturn(false);
-
         when(carpenterRepository.findById(1L)).thenReturn(Optional.of(carpenter));
         when(customerMapper.toEntity(customerDTO)).thenReturn(customer);
         when(customerRepository.save(any())).thenReturn(customer);
         when(customerMapper.toDTO(customer)).thenReturn(customerDTO);
 
         // primera creación (debe funcionar)
-        customerService. createCustomer(createCustomerRequest);
+        customerService. createCustomer(customerDTO);
 
         // segunda creación (debe fallar)
         assertThrows(IllegalArgumentException.class,
-                () -> customerService.createCustomer(createCustomerRequest));
+                () -> customerService.createCustomer(customerDTO));
     }
 }

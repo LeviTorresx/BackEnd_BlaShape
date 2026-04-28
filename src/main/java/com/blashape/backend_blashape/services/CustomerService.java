@@ -1,6 +1,5 @@
 package com.blashape.backend_blashape.services;
 
-import com.blashape.backend_blashape.DTOs.CreateCustomerRequest;
 import com.blashape.backend_blashape.DTOs.CustomerDTO;
 import com.blashape.backend_blashape.config.JwtUtil;
 import com.blashape.backend_blashape.entitys.Carpenter;
@@ -30,7 +29,7 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado con ID: ";
     
-    public CustomerDTO createCustomer(CreateCustomerRequest dto) {
+    public CustomerDTO createCustomer(CustomerDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
             throw new IllegalArgumentException("El nombre del cliente es obligatorio");
         }
@@ -58,35 +57,12 @@ public class CustomerService {
         Carpenter carpenter = carpenterRepository.findById(dto.getCarpenterId())
                 .orElseThrow(() -> new EntityNotFoundException("Carpintero no encontrado"));
 
-        if(customerRepository.existsByDni(dto.getDni()) || customerRepository.existsByEmail(dto.getEmail()) || customerRepository.existsByPhone(dto.getPhone())){
-            Customer customer = customerRepository.findByDni(dto.getDni())
-                    .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con DNI: " + dto.getDni()));
-
-            boolean alreadyAssociated = customer.getCarpenters().stream()
-                    .anyMatch(c -> c.getCarpenterId().equals(carpenter.getCarpenterId()));
-
-            if (alreadyAssociated) {
-                throw new IllegalArgumentException("El cliente ya está asociado a este carpintero");
-            }
-
-            customer.getCarpenters().add(carpenter);
-            
-            if (dto.getFurnitureListIds() != null && !dto.getFurnitureListIds().isEmpty()) {
-                List<Furniture> furnitureList = furnitureRepository.findAllById(dto.getFurnitureListIds());
-                customer.getFurnitureList().addAll(furnitureList);
-            } else {
-                customer.getFurnitureList().addAll(new ArrayList<>());
-            }
-
-            customer.setRole(UserRole.DEFAULT);
-            customer.setIsActive(true);
-
-            return customerMapper.toDTO(customerRepository.save(customer));
+        if (customerRepository.existsByDniAndCarpenter_CarpenterId(dto.getDni(), dto.getCarpenterId())) {
+            throw new IllegalArgumentException("Ya existe un cliente con ese DNI para este carpintero");
         }
 
-        Customer customer = customerMapper.createToEntity(dto);
-        customer.getCarpenters().add(carpenter);
-
+        Customer customer = customerMapper.toEntity(dto);
+        customer.setCarpenter(carpenter);
 
         // Si vienen muebles asociados
         if (dto.getFurnitureListIds() != null && !dto.getFurnitureListIds().isEmpty()) {
