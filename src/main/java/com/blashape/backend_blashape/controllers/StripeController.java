@@ -1,7 +1,5 @@
 package com.blashape.backend_blashape.controllers;
 
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -51,6 +49,18 @@ public class StripeController {
                                                                                                 checkoutRequest.getDescription()), 
                                                                     checkoutRequest.getSuccessUrl(), 
                                                                     checkoutRequest.getCancelUrl()));
+    }
+
+    @PostMapping("/cancel-subscription/{carpenterId}")
+    public ResponseEntity<String> cancelSubscription(@PathVariable Long carpenterId) {
+        try {
+            stripeService.cancelSubscription(carpenterId);
+            return ResponseEntity.ok("Suscripción cancelada exitosamente.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (StripeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al cancelar la suscripción: " + e.getMessage());
+        }
     }
 
     @PostMapping(value = "/webhook", consumes = "application/json", produces = "application/json")

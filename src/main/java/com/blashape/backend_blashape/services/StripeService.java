@@ -136,13 +136,23 @@ public class StripeService {
                         )
                         .build();
         } else if (PaymentType.SUBSCRIPTION.equals(payment.getPaymentType())) {
-            builder.setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-                        .addLineItem(
-                                SessionCreateParams.LineItem.builder()
-                                        .setPrice(payment.getPlan().getStripePriceId())
-                                        .setQuantity(1L)
-                                        .build()
-                        );
+                Long activePlanId = subscriptionRepository.getPlanIdForActiveSubscription(
+                    payment.getCarpenter().getCarpenterId(), SubscriptionStatus.ACTIVE);
+
+                if (activePlanId != null) {
+                        if (activePlanId.equals(payment.getPlan().getPlanId())) {
+                                throw new RuntimeException("El carpintero ya está suscrito a este plan");
+                        }
+                        cancelSubscription(payment.getCarpenter().getCarpenterId());
+                }
+
+                builder.setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                                .addLineItem(
+                                        SessionCreateParams.LineItem.builder()
+                                                .setPrice(payment.getPlan().getStripePriceId())
+                                                .setQuantity(1L)
+                                                .build()
+                                );
         } else {
             throw new RuntimeException("Tipo de pago no válido");
         }
@@ -181,12 +191,6 @@ public class StripeService {
                 payment.setAmount(product.getPrice());
                 payment.setCurrency(product.getCurrency());
         } else if (PaymentType.SUBSCRIPTION.equals(paymentType)) {
-                Boolean hasActiveSubscription = subscriptionRepository.existsByCarpenter_CarpenterIdAndStatus(carpenterId, SubscriptionStatus.ACTIVE);
-
-                if (hasActiveSubscription) {
-                        throw new RuntimeException("El carpintero ya tiene una suscripción activa");
-                }
-
                 Plan plan = planRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("Plan no encontrado con ID: " + id));
 
@@ -203,6 +207,18 @@ public class StripeService {
         }
 
         return paymentRepository.save(payment);
+    }
+
+    public void cancelSubscription(Long carpenteId) throws StripeException {
+        AppSubscription subscription = subscriptionRepository.findByCarpenter_CarpenterIdAndStatus(
+                carpenteId, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("No se encontró una suscripción activa para el carpintero con ID: " + carpenteId));
+
+        Subscription stripeSub = Subscription.retrieve(subscription.getStripeSubscriptionId());
+        stripeSub.cancel();
+
+        subscription.setStatus(SubscriptionStatus.CANCELED);
+        subscriptionRepository.save(subscription);
     }
 
     public void handleCheckoutSessionCompleted(Session session) throws StripeException {
