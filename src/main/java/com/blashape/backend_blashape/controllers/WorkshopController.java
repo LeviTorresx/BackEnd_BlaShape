@@ -1,12 +1,14 @@
 package com.blashape.backend_blashape.controllers;
 
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
+import com.blashape.backend_blashape.DTOs.WorkshopPublicDTO;
 import com.blashape.backend_blashape.DTOs.WorkshopResponse;
 import com.blashape.backend_blashape.services.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -56,6 +58,12 @@ public class WorkshopController {
     public ResponseEntity<Void> deleteWorkshop(@PathVariable Long id) {
         workshopService.deleteWorkshop(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/public/search")
+    public ResponseEntity<List<WorkshopPublicDTO>> searchPublicWorkshops(
+            @RequestParam("q") String query) {
+        return ResponseEntity.ok(workshopService.searchPublicWorkshops(query));
     }
 }
 

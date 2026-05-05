@@ -20,6 +20,11 @@ public class JwtUtil {
     @Value("${JWT_EXPIRATION}")
     private long EXPIRATION_TIME; //ahora es long, no String
 
+    @Value("${PQRS_TRACKING_EXPIRATION:2592000000}") // 30 días por defecto
+    private long PQRS_TRACKING_EXPIRATION;
+
+    private static final String PQRS_SCOPE = "pqrs-tracking";
+
     public String generateToken(String email, Long carpenterId, String plan) {
         return Jwts.builder()
                 .setSubject(email)
@@ -73,5 +78,25 @@ public class JwtUtil {
 
     public String extractPlan(String token) {
         return extractAllClaims(token).get("plan", String.class);
+    }
+
+    public String generatePqrsTrackingToken(Long pqrsId, String email) {
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("pqrsId", pqrsId)
+                .claim("scope", PQRS_SCOPE)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + PQRS_TRACKING_EXPIRATION))
+                .signWith(SignatureAlgorithm.HS256, SECRET_KEY.getBytes())
+                .compact();
+    }
+
+    public Long extractPqrsIdFromTrackingToken(String token) {
+        Claims claims = extractAllClaims(token);
+        Object scope = claims.get("scope");
+        if (!PQRS_SCOPE.equals(scope)) {
+            throw new JwtException("Token con scope inválido para seguimiento de PQRS");
+        }
+        return claims.get("pqrsId", Long.class);
     }
 }

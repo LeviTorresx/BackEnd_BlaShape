@@ -28,6 +28,7 @@ public class CustomerService {
     private final JwtUtil jwtUtil;
     private final CustomerMapper customerMapper;
     private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado con ID: ";
+    private final PqrsServices pqrsService;
     
     public CustomerDTO createCustomer(CustomerDTO dto) {
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -76,6 +77,9 @@ public class CustomerService {
         customer.setIsActive(true);
 
         Customer saved = customerRepository.save(customer);
+
+        // Vincular PQRS huérfanas que coincidan con el correo de este nuevo cliente
+        pqrsService.linkOrphanPqrsToCustomer(saved);
 
         return customerMapper.toDTO(saved);
     }

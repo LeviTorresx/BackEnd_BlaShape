@@ -1,6 +1,7 @@
 package com.blashape.backend_blashape.services;
 
 import com.blashape.backend_blashape.DTOs.WorkshopDTO;
+import com.blashape.backend_blashape.DTOs.WorkshopPublicDTO;
 import com.blashape.backend_blashape.entitys.Carpenter;
 import com.blashape.backend_blashape.entitys.Workshop;
 import com.blashape.backend_blashape.mapper.WorkshopMapper;
@@ -8,6 +9,7 @@ import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.WorkshopRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -109,6 +111,29 @@ public class WorkshopService {
         }
 
         workshopRepository.delete(workshop);
+    }
+
+    public List<WorkshopPublicDTO> searchPublicWorkshops(String query) {
+        if (query == null || query.trim().length() < 3) {
+            throw new IllegalArgumentException(
+                    "Debe ingresar al menos 3 caracteres para buscar");
+        }
+
+        int maxResults = 10;
+        return workshopRepository
+                .searchByNameContaining(query.trim(), PageRequest.of(0, maxResults))
+                .stream()
+                .map(this::toPublicDTO)
+                .toList();
+    }
+
+    private WorkshopPublicDTO toPublicDTO(Workshop workshop) {
+        return new WorkshopPublicDTO(
+                workshop.getWorkshopId(),
+                workshop.getCarpenter() != null ? workshop.getCarpenter().getCarpenterId() : null,
+                workshop.getName(),
+                workshop.getAddress()
+        );
     }
 }
 
