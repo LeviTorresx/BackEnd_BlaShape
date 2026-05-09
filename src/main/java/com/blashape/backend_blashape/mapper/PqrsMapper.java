@@ -7,12 +7,13 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PqrsMapper {
-
-    @Mapping(target = "customerId", source = "customer.customerId")
+    @Mapping(target = "customerId",  source = "customer.customerId")
     @Mapping(target = "carpenterId", source = "carpenter.carpenterId")
+    @Mapping(target = "workshopId",  source = "workshop.workshopId")
     PqrsDTO toDTO(Pqrs pqrs);
 
-    @Mapping(target = "customer", ignore = true)
+    @Mapping(target = "customer",  ignore = true)
     @Mapping(target = "carpenter", ignore = true)
+    @Mapping(target = "workshop",  ignore = true)
     Pqrs toEntity(PqrsDTO dto);
 }

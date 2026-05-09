@@ -7,6 +7,7 @@ import com.blashape.backend_blashape.mapper.PqrsMapper;
 import com.blashape.backend_blashape.repositories.CarpenterRepository;
 import com.blashape.backend_blashape.repositories.CustomerRepository;
 import com.blashape.backend_blashape.repositories.PqrsRepository;
+import com.blashape.backend_blashape.repositories.WorkshopRepository;
 import io.jsonwebtoken.JwtException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -31,6 +31,7 @@ public class PqrsServices {
     private final PqrsMapper pqrsMapper;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+    private final WorkshopRepository workshopRepository;
 
     @Value("${FRONTEND_URL:http://localhost:3000}")
     private String frontendUrl;
@@ -38,22 +39,47 @@ public class PqrsServices {
     // ============ CREATE (híbrido) ============
     public PqrsCreateResponse createPqrs(PqrsRequest request, String sessionToken) {
         validateBaseRequest(request);
-
-        Carpenter carpenter = carpenterRepository.findById(request.getCarpenterId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Carpintero no encontrado con ID: " + request.getCarpenterId()));
-
-        // Siempre flujo de invitado: validamos los datos y luego intentamos
-        // auto-link contra un Customer existente del mismo carpintero.
         validateGuestFields(request);
+
+        PqrsScope scope = request.getScope() != null ? request.getScope() : PqrsScope.WORKSHOP;
+
+        Carpenter carpenter;
+        Workshop  workshop = null;
+
+        if (scope == PqrsScope.WORKSHOP) {
+            if (request.getWorkshopId() == null && request.getCarpenterId() == null) {
+                throw new IllegalArgumentException("Debe indicar el taller destinatario");
+            }
+            if (request.getWorkshopId() != null) {
+                workshop = workshopRepository.findById(request.getWorkshopId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Taller no encontrado con ID: " + request.getWorkshopId()));
+                carpenter = workshop.getCarpenter();
+                if (carpenter == null) {
+                    throw new IllegalStateException("El taller no tiene carpintero asignado");
+                }
+            } else {
+                carpenter = carpenterRepository.findById(request.getCarpenterId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Carpintero no encontrado con ID: " + request.getCarpenterId()));
+            }
+        } else { // GENERAL
+            carpenter = carpenterRepository
+                    .findFirstByRoleAndIsActiveTrueOrderByCarpenterIdAsc(UserRole.PQRS_RECEIVER)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "No hay receptor de PQRS generales configurado. Contacte al administrador."));
+        }
+
         String email = request.getGuestEmail().trim().toLowerCase();
 
         Pqrs pqrs = new Pqrs();
         pqrs.setSubject(request.getSubject().trim());
         pqrs.setMessage(request.getMessage().trim());
         pqrs.setType(request.getType());
+        pqrs.setScope(scope);
         pqrs.setStatus(PqrsStatus.PENDIENTE);
         pqrs.setCarpenter(carpenter);
+        pqrs.setWorkshop(workshop);
         pqrs.setTrackingCode(generateTrackingCode());
 
         pqrs.setGuestName(request.getGuestName().trim());
@@ -61,19 +87,13 @@ public class PqrsServices {
         pqrs.setGuestEmail(email);
         pqrs.setGuestPhone(safeTrim(request.getGuestPhone()));
 
-        // Auto-link por email: si el correo del invitado coincide con un cliente
-        // ya registrado por este carpintero, vinculamos la PQRS a esa cuenta.
-        Optional<Customer> match = customerRepository
-                .findActiveByEmailAndCarpenterId(email, carpenter.getCarpenterId());
-        match.ifPresent(pqrs::setCustomer);
+        customerRepository.findActiveByEmailAndCarpenterId(email, carpenter.getCarpenterId())
+                .ifPresent(pqrs::setCustomer);
 
         Pqrs saved = pqrsRepository.save(pqrs);
 
-        // Magic link para seguimiento sin login
-        String trackingJwt = jwtUtil.generatePqrsTrackingToken(
-                saved.getPqrsId(), email);
+        String trackingJwt = jwtUtil.generatePqrsTrackingToken(saved.getPqrsId(), email);
         String trackingLink = buildTrackingLink(trackingJwt);
-
         sendTrackingEmail(saved, trackingLink);
 
         PqrsCreateResponse response = new PqrsCreateResponse();
@@ -228,9 +248,6 @@ public class PqrsServices {
         if (request.getType() == null) {
             throw new IllegalArgumentException(
                     "El tipo de PQRS es obligatorio (PETICION, QUEJA, RECLAMO o SUGERENCIA)");
-        }
-        if (request.getCarpenterId() == null) {
-            throw new IllegalArgumentException("Debe indicar el carpintero destinatario");
         }
     }
 

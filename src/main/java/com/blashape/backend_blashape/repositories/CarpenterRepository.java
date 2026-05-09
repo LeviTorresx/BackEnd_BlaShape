@@ -2,6 +2,7 @@ package com.blashape.backend_blashape.repositories;
 
 import com.blashape.backend_blashape.entitys.Carpenter;
 
+import com.blashape.backend_blashape.entitys.UserRole;
 import jakarta.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,6 @@ public interface CarpenterRepository extends JpaRepository<Carpenter, Long> {
             AND NOW() >= deleted_at + INTERVAL '3 minutes'
             """, nativeQuery = true)
     void deleteInactiveCarpentersOlderThan3Minutes();
+
+    Optional<Carpenter> findFirstByRoleAndIsActiveTrueOrderByCarpenterIdAsc(UserRole role);
 }
