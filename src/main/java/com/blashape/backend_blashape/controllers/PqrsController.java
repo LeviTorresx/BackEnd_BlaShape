@@ -53,8 +53,10 @@ public class PqrsController {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<PqrsDTO> getPqrs(@PathVariable Long id) {
-        return ResponseEntity.ok(pqrsServices.getPqrs(id));
+    public ResponseEntity<PqrsDTO> getPqrs(
+            @PathVariable Long id,
+            @CookieValue(name = "jwt", required = false) String token) {
+        return ResponseEntity.ok(pqrsServices.getPqrs(id, token));
     }
 
     @PutMapping("/respond/{id}")
@@ -65,14 +67,5 @@ public class PqrsController {
         if (token == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         PqrsDTO updated = pqrsServices.respondPqrs(id, request, token);
         return ResponseEntity.ok(Map.of(M_KEY, "Respuesta enviada exitosamente", "pqrs", updated));
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Map<String, String>> deletePqrs(
-            @PathVariable Long id,
-            @CookieValue(name = "jwt", required = false) String token) {
-        if (token == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        pqrsServices.deletePqrs(id, token);
-        return ResponseEntity.ok(Map.of(M_KEY, "PQRS eliminada correctamente"));
     }
 }

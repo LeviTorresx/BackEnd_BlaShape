@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+
 import java.time.LocalDateTime;
 
 @Entity @Getter @Setter @NoArgsConstructor @AllArgsConstructor
@@ -30,6 +32,7 @@ public class Pqrs {
     private PqrsStatus status = PqrsStatus.PENDIENTE;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
+    @ColumnDefault("'WORKSHOP'")
     private PqrsScope scope = PqrsScope.WORKSHOP;
 
     @Column(length = 2000)
