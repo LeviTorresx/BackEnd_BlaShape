@@ -32,18 +32,23 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors ->{})
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(BASE_ENDPOINT + "/auth/login",
-                                        BASE_ENDPOINT + "/auth/register",
-                                        BASE_ENDPOINT + "/auth/logout",
-                                        BASE_ENDPOINT + "/auth/verify-email",
-                                        BASE_ENDPOINT + "/auth/resend-verification",
-                                        BASE_ENDPOINT + "/auth/forgot-password",
-                                        BASE_ENDPOINT + "/auth/reset-password",
-                                        BASE_ENDPOINT + "/monetization/**",
-                                        BASE_ENDPOINT + "/auth/verify-reset-code",
-                                        BASE_ENDPOINT + "/invoice/**",
-                                        BASE_ENDPOINT + "/stripe/**")
-                                        .permitAll()
+                        .requestMatchers(
+                                BASE_ENDPOINT + "/auth/login",
+                                BASE_ENDPOINT + "/auth/register",
+                                BASE_ENDPOINT + "/auth/logout",
+                                BASE_ENDPOINT + "/auth/verify-email",
+                                BASE_ENDPOINT + "/auth/resend-verification",
+                                BASE_ENDPOINT + "/auth/forgot-password",
+                                BASE_ENDPOINT + "/auth/reset-password",
+                                BASE_ENDPOINT + "/auth/verify-reset-code",
+                                BASE_ENDPOINT + "/monetization/**",
+                                BASE_ENDPOINT + "/invoice/**",
+                                BASE_ENDPOINT + "/stripe/**",
+                                BASE_ENDPOINT + "/workshop/public/**",
+                                BASE_ENDPOINT + "/pqrs/create",
+                                BASE_ENDPOINT + "/pqrs/track",
+                                BASE_ENDPOINT + "/pqrs/track-by-code"
+                        ).permitAll()
                         .requestMatchers(BASE_ENDPOINT + "/auth/**")
                                         .authenticated()
                         .requestMatchers(BASE_ENDPOINT + "/alert/create",

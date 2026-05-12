@@ -42,4 +42,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             AND NOW() >= deleted_at + INTERVAL '3 minutes'
             """, nativeQuery = true)
     void deleteInactiveCustomersOlderThan3Minutes();
+
+    @Query("SELECT c FROM Customer c " +
+            "WHERE LOWER(c.email) = LOWER(:email) " +
+            "AND c.carpenter.carpenterId = :carpenterId " +
+            "AND c.isActive = true")
+    Optional<Customer> findActiveByEmailAndCarpenterId(@Param("email") String email,
+                                                       @Param("carpenterId") Long carpenterId);
 }
