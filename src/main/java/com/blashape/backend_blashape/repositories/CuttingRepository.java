@@ -16,4 +16,12 @@ public interface CuttingRepository extends JpaRepository<Cutting, Long> {
     @Query("SELECT c FROM Cutting c WHERE c.furniture.carpenter.carpenterId = :carpenterId")
     List<Cutting> findByCarpenterId(Long carpenterId);
 
+    @Query("""
+            SELECT c.materialName, COUNT(c)
+            FROM Cutting c
+            WHERE c.furniture.carpenter.carpenterId = :carpenterId
+            GROUP BY c.materialName
+            ORDER BY COUNT(c) DESC
+            """)
+    List<Object[]> findMostUsedMaterialsByCarpenterId(Long carpenterId);
 }

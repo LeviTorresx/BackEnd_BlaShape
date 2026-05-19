@@ -58,8 +58,9 @@ public class SecurityConfig {
                                         BASE_ENDPOINT + "/customer/**",
                                         BASE_ENDPOINT + "/cutting/**",
                                         BASE_ENDPOINT + "/furniture/**",
-                                        BASE_ENDPOINT + "/workshop/**")
-                                        .authenticated()
+                                        BASE_ENDPOINT + "/workshop/**",
+                                        BASE_ENDPOINT + "/analytics/**"
+                                    ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login.disable())

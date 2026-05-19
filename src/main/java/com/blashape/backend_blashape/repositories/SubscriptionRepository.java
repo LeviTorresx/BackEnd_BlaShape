@@ -21,4 +21,19 @@ public interface SubscriptionRepository extends JpaRepository<AppSubscription, L
 
     @Query("SELECT s.plan.planId FROM AppSubscription s WHERE s.carpenter.carpenterId = :carpenterId AND s.status = :activeStatus")
     Long getPlanIdForActiveSubscription(Long carpenterId, SubscriptionStatus activeStatus);
+
+    @Query("""
+            SELECT COUNT(s)
+            FROM AppSubscription s
+            WHERE s.status = 'ACTIVE'
+            """)
+    Long countActiveSubscriptions();
+
+    @Query("""
+            SELECT s.plan.planName, COUNT(s)
+            FROM AppSubscription s
+            GROUP BY s.plan.planName
+            ORDER BY COUNT(s) DESC
+            """)
+    List<Object[]> subscriptionsByPlan();
 }
