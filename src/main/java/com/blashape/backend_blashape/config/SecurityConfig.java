@@ -47,7 +47,9 @@ public class SecurityConfig {
                                 BASE_ENDPOINT + "/workshop/public/**",
                                 BASE_ENDPOINT + "/pqrs/create",
                                 BASE_ENDPOINT + "/pqrs/track",
-                                BASE_ENDPOINT + "/pqrs/track-by-code"
+                                BASE_ENDPOINT + "/pqrs/track-by-code",
+                                BASE_ENDPOINT + "/actuator/**",
+                                "/actuator/**"
                         ).permitAll()
                         .requestMatchers(BASE_ENDPOINT + "/auth/**")
                                         .authenticated()
