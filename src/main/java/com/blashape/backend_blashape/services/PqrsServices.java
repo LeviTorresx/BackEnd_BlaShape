@@ -78,7 +78,7 @@ public class PqrsServices {
             }
         } else { // GENERAL
             carpenter = carpenterRepository
-                    .findFirstByRoleAndIsActiveTrueOrderByCarpenterIdAsc(UserRole.PQRS_RECEIVER)
+                    .findFirstByRoleAndIsActiveTrueOrderByCarpenterIdAsc(UserRole.ADMIN)
                     .orElseThrow(() -> new IllegalStateException(
                             "No hay receptor de PQRS generales configurado. Contacte al administrador."));
         }
